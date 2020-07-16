@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>tester</name>
+  <version>0.0.0</version>
+  <description>The tester package</description>
+
+  <license>Apache 2.0</license>
+  <maintainer email="contact@antmicro.com">antmicro</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+
+</package>
