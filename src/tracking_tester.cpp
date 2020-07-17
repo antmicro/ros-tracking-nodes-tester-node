@@ -40,6 +40,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
     }
 
     double frame_start_time = ros::Time::now().toSec();
+    double frame_end_time = ros::Time::now().toSec();
     for (std::size_t processed_frames = 0; processed_frames < frame_paths.size();
             processed_frames++)
     {
@@ -62,13 +63,18 @@ void TrackingTester::run(bool visualize, int playback_fps)
             ros::spinOnce();
         }
         while (ros::ok()
-                && ((playback_fps == 0 && bboxes_counter < processed_frames + 1)
-                || (playback_fps &&
-                    ros::Time::now().toSec() - frame_start_time < 1.0 / playback_fps)));
+                && bboxes_counter < processed_frames + 1
+                && (playback_fps == 0 ||
+                    ros::Time::now().toSec() - frame_end_time < 1.0 / playback_fps));
 
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
-        ROS_INFO("IoU: %f%%, Frame time: %f", iou * 100.0, frame_time);
+        double total_frame_time = (ros::Time::now().toSec() - frame_end_time);
+
+        ROS_INFO("IoU: %f%%, Frame time: %f, Total frame time: %f", iou * 100.0, frame_time,
+                total_frame_time);
+
+        frame_end_time = ros::Time::now().toSec();
         iou_record.push_back(iou);
         frame_time_record.push_back(frame_time);
             
@@ -84,7 +90,17 @@ void TrackingTester::run(bool visualize, int playback_fps)
             }
         }
     }
-    cv::destroyAllWindows();
+    if (visualize)
+    {
+        double iou_avg = 0.0;
+        for (auto x : iou_record)
+            iou_avg += x;
+        iou_avg /= iou_record.size();
+        iou_avg *= 100.0;
+        ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
+        cv::waitKey(60 * 1000);
+        cv::destroyAllWindows();
+    }
 }
 
 void TrackingTester::saveRecords(std::string path)
