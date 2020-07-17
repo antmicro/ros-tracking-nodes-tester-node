@@ -40,9 +40,9 @@ void listFiles(std::string dir_path, std::vector<std::string> &files, std::strin
     closedir(dir);
 }
 
-Tester::Tester(std::string path)
+Tester::Tester(std::string in_path, std::string out_path)
 {
-    if (!readDirectory(path))
+    if (!readDirectory(in_path))
     {
         ROS_ERROR("Loading files error. Terminating");
         std::exit(1);
@@ -52,7 +52,7 @@ Tester::Tester(std::string path)
     loadAnnotations();
     subscribe_advertise();
     run();
-    saveRecords(path);
+    if (!out_path.empty()) saveRecords(out_path);
 }
 
 void Tester::run()
@@ -70,7 +70,7 @@ void Tester::run()
         cv::resizeWindow("Tester visualizer", 800, 600);
     }
 
-    double start_time = ros::Time::now().toSec();
+    double frame_start_time = ros::Time::now().toSec();
     for (int processed_frames = 0; processed_frames < frames.size(); processed_frames++)
     {
         auto frame = frames[processed_frames];
@@ -92,17 +92,19 @@ void Tester::run()
             }
         }
         double iou = calculateIou(annotation, current_bbox);
-        double fps = (processed_frames + 1) / (ros::Time::now().toSec() - start_time);
-        ROS_INFO("IoU: %f%%, FPS: %f", iou * 100.0, fps);
-        iouRecord.push_back(iou);
-        fpsRecord.push_back(fps);
+        auto curr_time = ros::Time::now().toSec();
+        double frame_time = (curr_time - frame_start_time);
+        frame_start_time = curr_time;
+        ROS_INFO("IoU: %f%%, Frame time: %f", iou * 100.0, frame_time);
+        iou_record.push_back(iou);
+        frame_time_record.push_back(frame_time);
     }
     cv::destroyAllWindows();
 }
 
 void Tester::saveRecords(std::string path)
 {
-    std::string filename = path + "/out.csv";
+    std::string filename = path;
     std::ofstream out(filename);
     if (!out)
     {
@@ -110,10 +112,10 @@ void Tester::saveRecords(std::string path)
         exit(1);
     }
     ROS_INFO("Saving records to file");
-    out << "Frame number, IoU, cumulative FPS\n";
+    out << "Frame number, IoU, frame time\n";
     out << std::setprecision(5) << std::fixed;
-    for (int i = 0; i < iouRecord.size(); i++)
-        out << i + 1 << ", " << iouRecord[i] << ", " << fpsRecord[i] << '\n';
+    for (int i = 0; i < iou_record.size(); i++)
+        out << i + 1 << ",\t" << iou_record[i] << ",\t" << frame_time_record[i] << '\n';
 
     ROS_INFO("Records saved");
 }
@@ -249,12 +251,12 @@ int main(int argc, char** argv)
     ROS_INFO("Initialized!");
     ros::NodeHandle tester_handle;
 
-    if (argc != 2)
+    if (argc < 2 || argc > 3)
     {
-        ROS_ERROR("Provide path to directory containing frames with annotations as the only"
-            "argument.");
+        ROS_ERROR("Provide one or two arguments: path to directory containing frames with"
+                " annotations and path where output should be saved (optional)");
         std::exit(1);
     }
-    std::string path = argv[1];
-    Tester tester(path);
+    std::string in_path = argv[1], out_path = (argc == 3 ? argv[2] : "");
+    Tester tester(in_path, out_path);
 }

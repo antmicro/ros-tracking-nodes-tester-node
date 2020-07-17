@@ -11,7 +11,7 @@ class Tester
 {
 public:
     Tester() = delete;
-    Tester(std::string path);
+    Tester(std::string in_path, std::string out_path);
     void run();
     void saveRecords(std::string path);
 private:
@@ -33,5 +33,5 @@ private:
     ros::Subscriber final_bbox_sub;
     ros::Publisher frame_pub;
     int bboxes_counter{};
-    std::vector<double> iouRecord, fpsRecord;
+    std::vector<double> iou_record, frame_time_record;
 };
