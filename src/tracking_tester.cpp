@@ -10,7 +10,7 @@
 #include <fstream>
 #include <cassert>
 
-TrackingTester::TrackingTester(std::string in_path, std::string out_path)
+TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string out_path)
 {
     if (!readDirectory(in_path))
     {
@@ -21,11 +21,11 @@ TrackingTester::TrackingTester(std::string in_path, std::string out_path)
     loadFrames();
     loadAnnotations();
     subscribe_advertise();
-    run();
+    run(visualize);
     if (!out_path.empty()) saveRecords(out_path);
 }
 
-void TrackingTester::run()
+void TrackingTester::run(bool visualize)
 {
     if (annotations.size() != frames.size())
     {
@@ -33,7 +33,6 @@ void TrackingTester::run()
                 annotations.size(), frames.size());
         ros::shutdown();
     }
-    const bool visualize = 1; // for simplicity it's here for now
     if (visualize)
     {
         cv::namedWindow("TrackingTester visualizer", cv::WINDOW_NORMAL);
@@ -41,7 +40,8 @@ void TrackingTester::run()
     }
 
     double frame_start_time = ros::Time::now().toSec();
-    for (int processed_frames = 0; processed_frames < frames.size(); processed_frames++)
+    for (std::size_t processed_frames = 0; processed_frames < frames.size();
+            processed_frames++)
     {
         auto frame = frames[processed_frames];
         auto annotation = annotations[processed_frames];
@@ -84,7 +84,7 @@ void TrackingTester::saveRecords(std::string path)
     ROS_INFO("Saving records to file");
     out << "Frame number, IoU, frame time\n";
     out << std::setprecision(5) << std::fixed;
-    for (int i = 0; i < iou_record.size(); i++)
+    for (std::size_t i = 0; i < iou_record.size(); i++)
         out << i + 1 << ",\t" << iou_record[i] << ",\t" << frame_time_record[i] << '\n';
 
     ROS_INFO("Records saved");
@@ -190,7 +190,7 @@ void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
     current_bbox.width = msg.bbox.width;
     current_bbox.height = msg.bbox.height;
     if (!msg.valid)
-        current_bbox.x = 1e4, current_bbox.height = 0;
+        current_bbox = Rect{};
 
     bboxes_counter++;
 }
@@ -203,16 +203,10 @@ void TrackingTester::publishFrame(cv::Mat frame)
 
 double TrackingTester::calculateIou(cv::Rect r1, cv::Rect r2)
 {
-    using ll = long long;
-    auto oneDimension = [](ll x1, ll l1, ll x2, ll l2)
-        {
-            if (x1 > x2) std::swap(x1, x2), std::swap(l1, l2);
-            return std::max(0ll, std::min(x1 + l1 - x2, l2));
-        };
-    ll areaOfIntersection = oneDimension(r1.x, r1.width, r2.x, r2.width)
-        * oneDimension(r1.y, r1.height, r2.y, r2.height);
-    return 1.0 * areaOfIntersection / (1ll * r1.width * r1.height + 1ll * r2.width * r2.height
-            - areaOfIntersection);
+    cv::Rect intersection = r1 & r2;
+    double iou = static_cast<double>(intersection.area())
+        / (r1.area() + r2.area() - intersection.area());
+    return iou;
 }
 
 int main(int argc, char** argv)
@@ -221,12 +215,13 @@ int main(int argc, char** argv)
     ROS_INFO("Initialized!");
     ros::NodeHandle tester_handle;
 
-    if (argc < 2 || argc > 3)
+    if (argc < 3 || argc > 4)
     {
-        ROS_ERROR("Provide one or two arguments: path to directory containing frames with"
+        ROS_ERROR("Provide two or three arguments: firstly - 0 for no visualization, 1 for"
+               " visualization, then path to directory containing frames with"
                 " annotations and path where output should be saved (optional)");
         ros::shutdown();
     }
-    std::string in_path = argv[1], out_path = (argc == 3 ? argv[2] : "");
-    TrackingTester tester(in_path, out_path);
+    std::string in_path = argv[2], out_path = (argc == 4 ? argv[3] : "");
+    TrackingTester tester(argv[1][0] == '1', in_path, out_path);
 }
