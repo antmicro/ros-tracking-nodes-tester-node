@@ -20,7 +20,7 @@
 class TrackingTester
 {
 public:
-    TrackingTester() = delete; // initialize only with all arguments
+    TrackingTester() = delete; ///<initialize only with all arguments
     /**
      * The first argument is either `0` or `1` indicating whether visualizer of tester should be
      * launched. This creates another window. Second argument is path to directory
@@ -101,14 +101,14 @@ private:
      */
     double calculateIou(cv::Rect r1, cv::Rect r2);
 
-    std::vector<std::string> frame_paths; // paths to frame files
-    std::string annotation_path; // path to annotation file (.ann)
-    std::vector<cv::Rect> annotations; // annotation file decyphered into cv::Rects
-    cv::Rect current_bbox; // latest bbox received from policy_manager
-    ros::Subscriber final_bbox_sub; // subscriber that receives bboxes
-    ros::Publisher frame_pub; // publisher that publishes frames
-    std::size_t bboxes_counter{}; // counts how many bboxes have been received so far
-    std::vector<double> iou_record, frame_time_record; // records that are saved to csv file
+    std::vector<std::string> frame_paths; ///<paths to frame files
+    std::string annotation_path; ///<path to annotation file (.ann)
+    std::vector<cv::Rect> annotations; ///<annotation file decyphered into cv::Rects
+    cv::Rect current_bbox; ///<latest bbox received from policy_manager
+    ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
+    ros::Publisher frame_pub; ///<publisher that publishes frames
+    std::size_t bboxes_counter{}; ///<counts how many bboxes have been received so far
+    std::vector<double> iou_record, frame_time_record; ///<records that are saved to csv file
 };
 
 #endif
