@@ -24,7 +24,7 @@ TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string 
     if (!out_path.empty()) saveRecords(out_path);
 }
 
-void TrackingTester::run(bool visualize, bool no_wait_mode)
+void TrackingTester::run(bool visualize)
 {
     if (annotations.size() != frame_paths.size())
     {
@@ -60,7 +60,7 @@ void TrackingTester::run(bool visualize, bool no_wait_mode)
         {
             ros::spinOnce();
         }
-        while (ros::ok() && !no_wait_time && bboxes_counter < processed_frames + 1)
+        while (ros::ok() && bboxes_counter < processed_frames + 1);
 
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
