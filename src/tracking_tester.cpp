@@ -10,7 +10,8 @@
 #include <fstream>
 #include <cassert>
 
-TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string out_path)
+TrackingTester::TrackingTester(bool visualize, int playback_fps, std::string in_path,
+        std::string out_path)
 {
     if (!readDirectory(in_path))
     {
@@ -20,11 +21,11 @@ TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string 
     sortFramePaths();
     loadAnnotations();
     subscribe_advertise();
-    run(visualize);
+    run(visualize, playback_fps);
     if (!out_path.empty()) saveRecords(out_path);
 }
 
-void TrackingTester::run(bool visualize)
+void TrackingTester::run(bool visualize, int playback_fps)
 {
     if (annotations.size() != frame_paths.size())
     {
@@ -60,7 +61,10 @@ void TrackingTester::run(bool visualize)
         {
             ros::spinOnce();
         }
-        while (ros::ok() && bboxes_counter < processed_frames + 1);
+        while (ros::ok()
+                && ((playback_fps == 0 && bboxes_counter < processed_frames + 1)
+                || (playback_fps &&
+                    ros::Time::now().toSec() - frame_start_time < 1.0 / playback_fps)));
 
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
@@ -210,13 +214,16 @@ int main(int argc, char** argv)
     ROS_INFO("Initialized!");
     ros::NodeHandle tester_handle;
 
-    if (argc < 3 || argc > 4)
+    if (argc < 4 || argc > 5)
     {
-        ROS_ERROR("Provide two or three arguments: firstly - 0 for no visualization, 1 for"
-               " visualization, then path to directory containing frames with"
-                " annotations and path where output should be saved (optional)");
+        ROS_ERROR("Provide three or four arguments: firstly - 0 for no visualization, 1 for"
+                " visualization, next playback fps or zero, then path to directory containing"
+                " frames with"
+                " annotations and finally path where output should be saved (optional)");
         ros::shutdown();
     }
-    std::string in_path = argv[2], out_path = (argc == 4 ? argv[3] : "");
-    TrackingTester tester(argv[1][0] == '1', in_path, out_path);
+    for (int i = 0; i < 5; i++)
+        ROS_INFO("%d: %s", i, argv[i]);
+    std::string in_path = argv[3], out_path = (argc == 5 ? argv[4] : "");
+    TrackingTester tester(argv[1][0] == '1', std::atoi(argv[2]), in_path, out_path);
 }

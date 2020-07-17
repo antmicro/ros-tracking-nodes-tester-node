@@ -23,28 +23,35 @@ public:
     TrackingTester() = delete; ///<initialize only with all arguments
     /**
      * The first argument is either `0` or `1` indicating whether visualizer of tester should be
-     * launched. This creates another window. Second argument is path to directory
+     * launched. This creates another window. Second argument is FPS of playback.
+     * It is an integerdetermining how many frames should be sent to system per second.
+     * Note that very high valuesmight be unsupported. If it is set to 0, tester will wait
+     * for bbox before it sends anotherframe. The third argument is path to directory
      * containing one `.ann` file with annotations in ALOV
-     * dataset format and the rest of the files are images containing frame info with names in format
+     * dataset format and the rest of the files are images containing frame
+     * info with names in format
      * `number.extension`, where `number` is any arbitrary integer (possibly with leading zeros)
      * of module not greater than $10^{18}$. Frames are processed in increasing `number` order
      * (sorted numerically, not lexicographically). For now it is assumed, that target is visible
      * in every frame and there is an annotation for every frame.
      * The paths have to be absolute paths.
-     * The third (last) argument is path where output file will be written in csv format. If no
+     * The fourth (last) argument is path where output file will be written in csv format. If no
      * path is provided output isn't written anywhere.
+     *
      * 
      * @param visualize open visualizer window?
+     * @param playback_fps how fast should frames be sent to policy_manager
      * @param in_path path to directory with frames
      * @param out_path path to output, no output written if empty
      */
-    TrackingTester(bool visualize, std::string in_path, std::string out_path);
+    TrackingTester(bool visualize, int playback_fps, std::string in_path,
+            std::string out_path);
 private:
     /**
      * Contains main loop
      * @param visualize open visualizer window?
      */
-    void run(bool visualize);
+    void run(bool visualize, int playback_fps);
 
     /**
      * Save gathered data
