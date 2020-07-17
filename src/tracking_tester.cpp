@@ -18,7 +18,6 @@ TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string 
         ros::shutdown();
     }
     sortFramePaths();
-    loadFrames();
     loadAnnotations();
     subscribe_advertise();
     run(visualize);
@@ -27,10 +26,10 @@ TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string 
 
 void TrackingTester::run(bool visualize)
 {
-    if (annotations.size() != frames.size())
+    if (annotations.size() != frame_paths.size())
     {
         ROS_ERROR("number of annotations: %lu and number of frames: %lu differ",
-                annotations.size(), frames.size());
+                annotations.size(), frame_paths.size());
         ros::shutdown();
     }
     if (visualize)
@@ -40,15 +39,31 @@ void TrackingTester::run(bool visualize)
     }
 
     double frame_start_time = ros::Time::now().toSec();
-    for (std::size_t processed_frames = 0; processed_frames < frames.size();
+    for (std::size_t processed_frames = 0; processed_frames < frame_paths.size();
             processed_frames++)
     {
-        auto frame = frames[processed_frames];
+        std::string path = frame_paths[processed_frames];
+        cv::Mat image = cv::imread(path);
+        if (!image.data)
+        {
+            ROS_ERROR("Unable to open image %s", path.c_str());
+            ros::shutdown();
+        }
+
+        auto frame = image;
         auto annotation = annotations[processed_frames];
         if (!ros::ok()) break;
         publishFrame(frame);
+        frame_start_time = ros::Time::now().toSec();
+
         while (ros::ok() && bboxes_counter < processed_frames + 1)
             ros::spinOnce();
+
+        double iou = calculateIou(annotation, current_bbox);
+        double frame_time = (ros::Time::now().toSec() - frame_start_time);
+        ROS_INFO("IoU: %f%%, Frame time: %f", iou * 100.0, frame_time);
+        iou_record.push_back(iou);
+        frame_time_record.push_back(frame_time);
             
         if (visualize)
         {   
@@ -61,13 +76,6 @@ void TrackingTester::run(bool visualize)
                 system("killall rosnode");
             }
         }
-        double iou = calculateIou(annotation, current_bbox);
-        auto curr_time = ros::Time::now().toSec();
-        double frame_time = (curr_time - frame_start_time);
-        frame_start_time = curr_time;
-        ROS_INFO("IoU: %f%%, Frame time: %f", iou * 100.0, frame_time);
-        iou_record.push_back(iou);
-        frame_time_record.push_back(frame_time);
     }
     cv::destroyAllWindows();
 }
@@ -138,21 +146,6 @@ void TrackingTester::sortFramePaths()
     std::sort(frame_paths.begin(), frame_paths.end(), pathComparator);
 }
 
-void TrackingTester::loadFrames()
-{
-    for (auto path : frame_paths)
-    {
-        cv::Mat image = cv::imread(path);
-        if (!image.data)
-        {
-            ROS_ERROR("Unable to open image %s", path.c_str());
-            ros::shutdown();
-        }
-        frames.push_back(image);
-    }
-    ROS_INFO("Loaded frames");
-}
-
 void TrackingTester::loadAnnotations()
 {
     std::ifstream str(annotation_path);
@@ -190,7 +183,7 @@ void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
     current_bbox.width = msg.bbox.width;
     current_bbox.height = msg.bbox.height;
     if (!msg.valid)
-        current_bbox = Rect{};
+        current_bbox = cv::Rect{};
 
     bboxes_counter++;
 }

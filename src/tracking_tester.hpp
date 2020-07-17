@@ -53,7 +53,6 @@ private:
     
     std::vector<std::string> frame_paths;
     std::string annotation_path;
-    std::vector<cv::Mat> frames;
     std::vector<cv::Rect> annotations;
     cv::Rect current_bbox;
     ros::Subscriber final_bbox_sub;
