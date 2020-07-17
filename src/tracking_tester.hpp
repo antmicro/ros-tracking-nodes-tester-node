@@ -30,6 +30,7 @@ public:
      * of module not greater than $10^{18}$. Frames are processed in increasing `number` order
      * (sorted numerically, not lexicographically). For now it is assumed, that target is visible
      * in every frame and there is an annotation for every frame.
+     * The paths have to be absolute paths.
      * The third (last) argument is path where output file will be written in csv format. If no
      * path is provided output isn't written anywhere.
      * 
