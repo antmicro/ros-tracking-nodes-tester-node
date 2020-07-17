@@ -10,10 +10,12 @@
 class Tester
 {
 public:
+    Tester() = delete;
     Tester(std::string path);
-    bool readDirectory(std::string path);
     void run();
+    void saveRecords(std::string path);
 private:
+    bool readDirectory(std::string path);
     static bool pathComparator(std::string p1, std::string p2);
     void sortFramePaths();
     void loadFrames();
@@ -31,4 +33,5 @@ private:
     ros::Subscriber final_bbox_sub;
     ros::Publisher frame_pub;
     int bboxes_counter{};
+    std::vector<double> iouRecord, fpsRecord;
 };

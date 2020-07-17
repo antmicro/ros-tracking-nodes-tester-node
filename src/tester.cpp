@@ -52,6 +52,70 @@ Tester::Tester(std::string path)
     loadAnnotations();
     subscribe_advertise();
     run();
+    saveRecords(path);
+}
+
+void Tester::run()
+{
+    if (annotations.size() != frames.size())
+    {
+        ROS_ERROR("number of annotations: %lu and number of frames: %lu differ",
+                annotations.size(), frames.size());
+        std::exit(1);
+    }
+    const bool visualize = 1; // for simplicity it's here for now
+    if (visualize)
+    {
+        cv::namedWindow("Tester visualizer", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Tester visualizer", 800, 600);
+    }
+
+    double start_time = ros::Time::now().toSec();
+    for (int processed_frames = 0; processed_frames < frames.size(); processed_frames++)
+    {
+        auto frame = frames[processed_frames];
+        auto annotation = annotations[processed_frames];
+        if (!ros::ok()) break;
+        publishFrame(frame);
+        while (ros::ok() && bboxes_counter < processed_frames + 1)
+            ros::spinOnce();
+            
+        if (visualize)
+        {   
+            cv::rectangle(frame, annotation, cv::Scalar(0, 255, 0));
+            cv::rectangle(frame, current_bbox, cv::Scalar(0, 0, 255));
+            cv::imshow("Tester visualizer", frame);
+            if (cv::waitKey(1) == 'q')
+            {
+                system("rosnode kill -a");
+                system("killall rosnode");
+            }
+        }
+        double iou = calculateIou(annotation, current_bbox);
+        double fps = (processed_frames + 1) / (ros::Time::now().toSec() - start_time);
+        ROS_INFO("IoU: %f%%, FPS: %f", iou * 100.0, fps);
+        iouRecord.push_back(iou);
+        fpsRecord.push_back(fps);
+    }
+    cv::destroyAllWindows();
+}
+
+void Tester::saveRecords(std::string path)
+{
+    std::string filename = path + "/out.csv";
+    std::ofstream out(filename);
+    if (!out)
+    {
+        ROS_ERROR("%s", ("Could not open file " + filename + " for writing.").c_str());
+        exit(1);
+    }
+    ROS_INFO("Saving records to file");
+    out << "Frame number, IoU, cumulative FPS\n";
+    out << std::setprecision(5) << std::fixed;
+    for (int i = 0; i < iouRecord.size(); i++)
+        out << i + 1 << ", " << iouRecord[i] << ", " << fpsRecord[i] << '\n';
+
+    ROS_INFO("Records saved");
 }
 
 bool Tester::readDirectory(std::string path)
@@ -177,50 +241,6 @@ double Tester::calculateIou(cv::Rect r1, cv::Rect r2)
         * oneDimension(r1.y, r1.height, r2.y, r2.height);
     return 1.0 * areaOfIntersection / (1ll * r1.width * r1.height + 1ll * r2.width * r2.height
             - areaOfIntersection);
-}
-
-void Tester::run()
-{
-    if (annotations.size() != frames.size())
-    {
-        ROS_ERROR("number of annotations: %lu and number of frames: %lu differ",
-                annotations.size(), frames.size());
-        std::exit(1);
-    }
-    const bool visualize = 1; // for simplicity it's here for now
-    if (visualize)
-    {
-        cv::namedWindow("Tester visualizer", cv::WINDOW_NORMAL);
-        cv::resizeWindow("Tester visualizer", 800, 600);
-    }
-
-    double start_time = ros::Time::now().toSec();
-    for (int processed_frames = 0; processed_frames < frames.size(); processed_frames++)
-    {
-        auto frame = frames[processed_frames];
-        auto annotation = annotations[processed_frames];
-        if (!ros::ok()) break;
-        publishFrame(frame);
-        while (ros::ok() && bboxes_counter < processed_frames + 1)
-            ros::spinOnce();
-            
-        if (visualize)
-        {   
-            cv::rectangle(frame, annotation, cv::Scalar(0, 255, 0));
-            cv::rectangle(frame, current_bbox, cv::Scalar(0, 0, 255));
-            cv::imshow("Tester visualizer", frame);
-            if (cv::waitKey(1) == 'q')
-            {
-                system("rosnode kill -a");
-                system("killall rosnode");
-            }
-        }
-        double iou = calculateIou(annotation, current_bbox);
-        ROS_INFO("IoU: %f%%, FPS: %f", iou * 100.0,
-                (processed_frames + 1) / (ros::Time::now().toSec() - start_time));
-    }
-    
-    cv::destroyAllWindows();
 }
 
 int main(int argc, char** argv)
