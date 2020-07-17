@@ -1,4 +1,5 @@
 #include "tracking_tester.hpp"
+#include "FileSystemUtils.hpp"
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -8,37 +9,6 @@
 #include <sstream>
 #include <fstream>
 #include <cassert>
-
-inline bool endsWith(std::string const & value, std::string const & ending)
-{
-    if (ending.size() > value.size()) return false;
-    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
-
-void listFiles(std::string dir_path, std::vector<std::string> &files, std::string extension="")
-{
-    DIR *dir;
-    struct dirent *entry;
-
-    if (!(dir = opendir(dir_path.c_str())))
-        return;
-
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_DIR) {
-            char path[1024];
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            snprintf(path, sizeof(path), "%s/%s", dir_path.c_str(), entry->d_name);
-            listFiles(path, files, extension);
-        } else {
-            std::string file(entry->d_name);
-            if (endsWith(file, extension)) {
-                files.push_back(dir_path+"/"+entry->d_name);
-            }
-        }
-    }
-    closedir(dir);
-}
 
 TrackingTester::TrackingTester(std::string in_path, std::string out_path)
 {
@@ -123,7 +93,7 @@ void TrackingTester::saveRecords(std::string path)
 bool TrackingTester::readDirectory(std::string path)
 {
     std::vector<std::string> ann_files;
-    listFiles(path, ann_files, ".ann");
+    FileSystemUtils::listFiles(path, ann_files, ".ann");
     if (ann_files.size() == 0)
     {
         ROS_ERROR("Found no annotation files.");
@@ -138,7 +108,7 @@ bool TrackingTester::readDirectory(std::string path)
     else annotation_path = ann_files.back();
 
     std::vector<std::string> frames;
-    listFiles(path, frames);
+    FileSystemUtils::listFiles(path, frames);
     frames.erase(std::remove_if(frames.begin(), frames.end(), [](std::string s)
             { return (s.substr(s.size() - 3) == "ann"); }), frames.end());
     frame_paths = frames;

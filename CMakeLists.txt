@@ -29,18 +29,11 @@ catkin_package(
 
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
 
+include_directories(${catkin_INCLUDE_DIRS})
+
 include_directories(
     src
     ${catkin_INCLUDE_DIRS}
-    ${OpenCV_LIBS}
-)
-
-add_library(${PROJECT_NAME}_lib
-    src/tracking_tester.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}_lib
-    ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
 )
 
@@ -48,6 +41,9 @@ target_link_libraries(${PROJECT_NAME}_lib
 add_executable(tracking_tester
     src/tracking_tester.cpp
 )
+
+add_dependencies(tracking_tester ${PROJECT_NAME}_gencpp)
+
 target_link_libraries(tracking_tester
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
