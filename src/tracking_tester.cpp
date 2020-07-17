@@ -1,4 +1,4 @@
-#include "tester.hpp"
+#include "tracking_tester.hpp"
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -40,12 +40,12 @@ void listFiles(std::string dir_path, std::vector<std::string> &files, std::strin
     closedir(dir);
 }
 
-Tester::Tester(std::string in_path, std::string out_path)
+TrackingTester::TrackingTester(std::string in_path, std::string out_path)
 {
     if (!readDirectory(in_path))
     {
         ROS_ERROR("Loading files error. Terminating");
-        std::exit(1);
+        ros::shutdown();
     }
     sortFramePaths();
     loadFrames();
@@ -55,19 +55,19 @@ Tester::Tester(std::string in_path, std::string out_path)
     if (!out_path.empty()) saveRecords(out_path);
 }
 
-void Tester::run()
+void TrackingTester::run()
 {
     if (annotations.size() != frames.size())
     {
         ROS_ERROR("number of annotations: %lu and number of frames: %lu differ",
                 annotations.size(), frames.size());
-        std::exit(1);
+        ros::shutdown();
     }
     const bool visualize = 1; // for simplicity it's here for now
     if (visualize)
     {
-        cv::namedWindow("Tester visualizer", cv::WINDOW_NORMAL);
-        cv::resizeWindow("Tester visualizer", 800, 600);
+        cv::namedWindow("TrackingTester visualizer", cv::WINDOW_NORMAL);
+        cv::resizeWindow("TrackingTester visualizer", 800, 600);
     }
 
     double frame_start_time = ros::Time::now().toSec();
@@ -84,7 +84,7 @@ void Tester::run()
         {   
             cv::rectangle(frame, annotation, cv::Scalar(0, 255, 0));
             cv::rectangle(frame, current_bbox, cv::Scalar(0, 0, 255));
-            cv::imshow("Tester visualizer", frame);
+            cv::imshow("TrackingTester visualizer", frame);
             if (cv::waitKey(1) == 'q')
             {
                 system("rosnode kill -a");
@@ -102,14 +102,14 @@ void Tester::run()
     cv::destroyAllWindows();
 }
 
-void Tester::saveRecords(std::string path)
+void TrackingTester::saveRecords(std::string path)
 {
     std::string filename = path;
     std::ofstream out(filename);
     if (!out)
     {
         ROS_ERROR("%s", ("Could not open file " + filename + " for writing.").c_str());
-        exit(1);
+        ros::shutdown();
     }
     ROS_INFO("Saving records to file");
     out << "Frame number, IoU, frame time\n";
@@ -120,7 +120,7 @@ void Tester::saveRecords(std::string path)
     ROS_INFO("Records saved");
 }
 
-bool Tester::readDirectory(std::string path)
+bool TrackingTester::readDirectory(std::string path)
 {
     std::vector<std::string> ann_files;
     listFiles(path, ann_files, ".ann");
@@ -146,7 +146,7 @@ bool Tester::readDirectory(std::string path)
     return 1;
 }
 
-bool Tester::pathComparator(std::string p1, std::string p2)
+bool TrackingTester::pathComparator(std::string p1, std::string p2)
 {
     p1 = p1.substr(0, p1.find_last_of("."));
     p2 = p2.substr(0, p2.find_last_of("."));
@@ -158,17 +158,17 @@ bool Tester::pathComparator(std::string p1, std::string p2)
     catch (const std::exception& e)
     {
         ROS_ERROR("Invalid frame filename"); 
-        std::exit(1);
+        ros::shutdown();
     }
     return a1 < a2;
 }
 
-void Tester::sortFramePaths()
+void TrackingTester::sortFramePaths()
 {
     std::sort(frame_paths.begin(), frame_paths.end(), pathComparator);
 }
 
-void Tester::loadFrames()
+void TrackingTester::loadFrames()
 {
     for (auto path : frame_paths)
     {
@@ -176,20 +176,20 @@ void Tester::loadFrames()
         if (!image.data)
         {
             ROS_ERROR("Unable to open image %s", path.c_str());
-            std::exit(1);
+            ros::shutdown();
         }
         frames.push_back(image);
     }
     ROS_INFO("Loaded frames");
 }
 
-void Tester::loadAnnotations()
+void TrackingTester::loadAnnotations()
 {
     std::ifstream str(annotation_path);
     if (!str)
     {
         ROS_INFO("Error opening annotation file");
-        std::exit(1);
+        ros::shutdown();
     }
     std::string line;
     while (getline(str, line))
@@ -205,15 +205,15 @@ void Tester::loadAnnotations()
     ROS_INFO("Annotations loaded");
 }
 
-void Tester::subscribe_advertise()
+void TrackingTester::subscribe_advertise()
 {
     ros::NodeHandle tester_handle;
     final_bbox_sub = tester_handle.subscribe("policy_manager/final_bbox", 1,
-            &Tester::receiveBbox, this);
+            &TrackingTester::receiveBbox, this);
     frame_pub = tester_handle.advertise<sensor_msgs::Image>("frame_producer/frame", 1);
 }
 
-void Tester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
+void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
 {
     current_bbox.x = msg.bbox.x;
     current_bbox.y = msg.bbox.y;
@@ -225,13 +225,13 @@ void Tester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
     bboxes_counter++;
 }
 
-void Tester::publishFrame(cv::Mat frame)
+void TrackingTester::publishFrame(cv::Mat frame)
 {
     const auto msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
     frame_pub.publish(msg);
 }
 
-double Tester::calculateIou(cv::Rect r1, cv::Rect r2)
+double TrackingTester::calculateIou(cv::Rect r1, cv::Rect r2)
 {
     using ll = long long;
     auto oneDimension = [](ll x1, ll l1, ll x2, ll l2)
@@ -255,8 +255,8 @@ int main(int argc, char** argv)
     {
         ROS_ERROR("Provide one or two arguments: path to directory containing frames with"
                 " annotations and path where output should be saved (optional)");
-        std::exit(1);
+        ros::shutdown();
     }
     std::string in_path = argv[1], out_path = (argc == 3 ? argv[2] : "");
-    Tester tester(in_path, out_path);
+    TrackingTester tester(in_path, out_path);
 }

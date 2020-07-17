@@ -1,3 +1,6 @@
+#ifndef TRACKING_TESTER_
+#define TRACKING_TESTER_
+
 #include "tracking_tester/optional_bbox_msg.h"
 
 #include <string>
@@ -7,11 +10,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <ros/ros.h>
 
-class Tester
+class TrackingTester
 {
 public:
-    Tester() = delete;
-    Tester(std::string in_path, std::string out_path);
+    TrackingTester() = delete;
+    TrackingTester(std::string in_path, std::string out_path);
     void run();
     void saveRecords(std::string path);
 private:
@@ -35,3 +38,5 @@ private:
     int bboxes_counter{};
     std::vector<double> iou_record, frame_time_record;
 };
+
+#endif

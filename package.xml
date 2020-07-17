@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>tester</name>
+  <name>tracking_tester</name>
   <version>0.0.0</version>
-  <description>The tester package</description>
+  <description>The tracking tester package</description>
 
   <license>Apache 2.0</license>
   <maintainer email="contact@antmicro.com">antmicro</maintainer>
