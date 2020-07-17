@@ -24,7 +24,7 @@ TrackingTester::TrackingTester(bool visualize, std::string in_path, std::string 
     if (!out_path.empty()) saveRecords(out_path);
 }
 
-void TrackingTester::run(bool visualize)
+void TrackingTester::run(bool visualize, bool no_wait_mode)
 {
     if (annotations.size() != frame_paths.size())
     {
@@ -56,8 +56,11 @@ void TrackingTester::run(bool visualize)
         publishFrame(frame);
         frame_start_time = ros::Time::now().toSec();
 
-        while (ros::ok() && bboxes_counter < processed_frames + 1)
+        do
+        {
             ros::spinOnce();
+        }
+        while (ros::ok() && !no_wait_time && bboxes_counter < processed_frames + 1)
 
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
@@ -105,13 +108,13 @@ bool TrackingTester::readDirectory(std::string path)
     if (ann_files.size() == 0)
     {
         ROS_ERROR("Found no annotation files.");
-        return 0;
+        return false;
     }
     else if (ann_files.size() > 1)
     {
         ROS_ERROR("Multiple annotation files aren't supported."
                "Merge them into one file.");
-        return 0;
+        return false;
     }
     else annotation_path = ann_files.back();
 
@@ -121,7 +124,7 @@ bool TrackingTester::readDirectory(std::string path)
             { return (s.substr(s.size() - 3) == "ann"); }), frames.end());
     frame_paths = frames;
     ROS_INFO("Found %lu frame files", frame_paths.size());
-    return 1;
+    return true;
 }
 
 bool TrackingTester::pathComparator(std::string p1, std::string p2)
@@ -157,7 +160,6 @@ void TrackingTester::loadAnnotations()
     std::string line;
     while (getline(str, line))
     {
-        std::stringstream ss(line);
         double x1, y1, x2, y2, buff;
         str >> buff >> x1 >> y1 >> buff >> buff >> buff >> buff >> x2 >> y2;
         int x = std::round(x1), y = std::round(y1), width = std::round(x2 - x1), 
