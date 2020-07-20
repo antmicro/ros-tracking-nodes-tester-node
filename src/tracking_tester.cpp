@@ -54,25 +54,36 @@ void TrackingTester::run(bool visualize, int playback_fps)
 
         auto frame = image;
         auto annotation = annotations[processed_frames];
-        if (!ros::ok()) break;
         publishFrame(frame);
-        frame_start_time = ros::Time::now().toSec();
+        if (!ros::ok()) break;
 
-        do
+        frame_start_time = ros::Time::now().toSec();
+        if (playback_fps) // passively wait until we can process another frame
         {
+            ros::Time::sleepUntil(ros::Time(frame_end_time + 1.0 / playback_fps));
             ros::spinOnce();
         }
-        while (ros::ok()
-                && bboxes_counter < processed_frames + 1
-                && (playback_fps == 0 ||
-                    ros::Time::now().toSec() - frame_end_time < 1.0 / playback_fps));
+        else
+        {
+             ros::Rate loop_rate(240.0); 
+            // wait until we get another frame, but check for it rarely to save CPU time
+            while (ros::ok() && bboxes_counter < processed_frames + 1)
+            {
+                ros::spinOnce();
+                loop_rate.sleep();
+            }
+        }
 
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
         double total_frame_time = (ros::Time::now().toSec() - frame_end_time);
 
-        ROS_INFO("IoU: %f%%, Frame time: %f, Total frame time: %f", iou * 100.0, frame_time,
-                total_frame_time);
+        if (playback_fps)
+            ROS_INFO("IoU: IoU: %f%%, FPS: %f", iou * 100.0, 1.0 / total_frame_time);
+        else 
+            ROS_INFO("IoU: %f%%, Policy manager time: %f, Total frame time: %f, Total FPS: %f",
+                    iou * 100.0,
+                    frame_time, total_frame_time, 1.0 / total_frame_time);
 
         frame_end_time = ros::Time::now().toSec();
         iou_record.push_back(iou);
@@ -98,8 +109,10 @@ void TrackingTester::run(bool visualize, int playback_fps)
         iou_avg /= iou_record.size();
         iou_avg *= 100.0;
         ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
-        cv::waitKey(60 * 1000);
+        while (cv::waitKey(100) != 'q');
         cv::destroyAllWindows();
+        system("rosnode kill -a");
+        system("killall rosnode");
     }
 }
 
@@ -238,8 +251,6 @@ int main(int argc, char** argv)
                 " annotations and finally path where output should be saved (optional)");
         ros::shutdown();
     }
-    for (int i = 0; i < 5; i++)
-        ROS_INFO("%d: %s", i, argv[i]);
     std::string in_path = argv[3], out_path = (argc == 5 ? argv[4] : "");
     TrackingTester tester(argv[1][0] == '1', std::atoi(argv[2]), in_path, out_path);
 }
