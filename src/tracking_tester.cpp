@@ -10,6 +10,8 @@
 #include <fstream>
 #include <cassert>
 
+const double check_for_bbox_rate = 240.0;
+
 TrackingTester::TrackingTester(bool visualize, int playback_fps, std::string in_path,
         std::string out_path)
 {
@@ -65,7 +67,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
         }
         else
         {
-             ros::Rate loop_rate(240.0); 
+            ros::Rate loop_rate(check_for_bbox_rate); 
             // wait until we get another frame, but check for it rarely to save CPU time
             while (ros::ok() && bboxes_counter < processed_frames + 1)
             {
@@ -154,7 +156,7 @@ bool TrackingTester::readDirectory(std::string path)
     std::vector<std::string> frames;
     FileSystemUtils::listFiles(path, frames);
     frames.erase(std::remove_if(frames.begin(), frames.end(), [](std::string s)
-            { return (s.substr(s.size() - 3) == "ann"); }), frames.end());
+            { return s.size() >= 3 && (s.substr(s.size() - 3) == "ann"); }), frames.end());
     frame_paths = frames;
     ROS_INFO("Found %lu frame files", frame_paths.size());
     return true;
