@@ -46,6 +46,7 @@ public:
      */
     TrackingTester(bool visualize, int playback_fps, std::string in_path,
             std::string out_path);
+    ~TrackingTester(); ///< shutdown ros after tests
 private:
     /**
      * Contains main loop

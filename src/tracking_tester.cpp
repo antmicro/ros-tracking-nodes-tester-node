@@ -27,6 +27,12 @@ TrackingTester::TrackingTester(bool visualize, int playback_fps, std::string in_
     if (!out_path.empty()) saveRecords(out_path);
 }
 
+TrackingTester::~TrackingTester()
+{
+    system("rosnode kill -a");
+    system("killall roscore");
+}
+
 void TrackingTester::run(bool visualize, int playback_fps)
 {
     if (annotations.size() != frame_paths.size())
@@ -80,12 +86,22 @@ void TrackingTester::run(bool visualize, int playback_fps)
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
         double total_frame_time = (ros::Time::now().toSec() - frame_end_time);
 
-        if (playback_fps)
-            ROS_INFO("IoU: IoU: %f%%, FPS: %f", iou * 100.0, 1.0 / total_frame_time);
-        else 
-            ROS_INFO("IoU: %f%%, Policy manager time: %f, Total frame time: %f, Total FPS: %f",
-                    iou * 100.0,
-                    frame_time, total_frame_time, 1.0 / total_frame_time);
+        if (visualize)
+        {
+            if (playback_fps)
+                ROS_INFO("IoU: IoU: %f%%, FPS: %f", iou * 100.0, 1.0 / total_frame_time);
+            else 
+                ROS_INFO("IoU: %f%%, Policy manager time: %f,"
+                        "Total frame time: %f, Total FPS: %f",
+                        iou * 100.0,
+                        frame_time, total_frame_time, 1.0 / total_frame_time);
+        }
+        else
+        {
+             if ((processed_frames + 1) % (frame_paths.size() / 10) == 0)
+                 ROS_INFO("Testing...\t%d%%", static_cast<int>(
+                             (processed_frames + 1) / (frame_paths.size() / 10) * 10));
+        }
 
         frame_end_time = ros::Time::now().toSec();
         iou_record.push_back(iou);
@@ -99,7 +115,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
             if (cv::waitKey(1) == 'q')
             {
                 system("rosnode kill -a");
-                system("killall rosnode");
+                system("killall roscore");
             }
         }
     }
@@ -113,8 +129,6 @@ void TrackingTester::run(bool visualize, int playback_fps)
         ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
         while (cv::waitKey(100) != 'q');
         cv::destroyAllWindows();
-        system("rosnode kill -a");
-        system("killall rosnode");
     }
 }
 
