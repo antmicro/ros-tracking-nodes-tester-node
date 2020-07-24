@@ -29,8 +29,6 @@ TrackingTester::TrackingTester(bool visualize, int playback_fps, std::string in_
 
 TrackingTester::~TrackingTester()
 {
-    system("rosnode kill -a");
-    system("killall roscore");
 }
 
 void TrackingTester::run(bool visualize, int playback_fps)
@@ -269,4 +267,6 @@ int main(int argc, char** argv)
     }
     std::string in_path = argv[3], out_path = (argc == 5 ? argv[4] : "");
     TrackingTester tester(argv[1][0] == '1', std::atoi(argv[2]), in_path, out_path);
+    system("rosnode kill -a");
+    system("killall roscore");
 }
