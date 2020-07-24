@@ -119,14 +119,14 @@ void TrackingTester::run(bool visualize, int playback_fps)
             }
         }
     }
+    double iou_avg = 0.0;
+    for (auto x : iou_record)
+        iou_avg += x;
+    iou_avg /= iou_record.size();
+    iou_avg *= 100.0;
+    ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
     if (visualize)
     {
-        double iou_avg = 0.0;
-        for (auto x : iou_record)
-            iou_avg += x;
-        iou_avg /= iou_record.size();
-        iou_avg *= 100.0;
-        ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
         while (cv::waitKey(100) != 'q');
         cv::destroyAllWindows();
     }
@@ -142,10 +142,10 @@ void TrackingTester::saveRecords(std::string path)
         ros::shutdown();
     }
     ROS_INFO("Saving records to file");
-    out << "Frame number, IoU, frame time\n";
+    out << "Frame number,IoU,frame time\n";
     out << std::setprecision(5) << std::fixed;
     for (std::size_t i = 0; i < iou_record.size(); i++)
-        out << i + 1 << ",\t" << iou_record[i] << ",\t" << frame_time_record[i] << '\n';
+        out << i + 1 << "," << iou_record[i] << "," << frame_time_record[i] << '\n';
 
     ROS_INFO("Records saved");
 }
