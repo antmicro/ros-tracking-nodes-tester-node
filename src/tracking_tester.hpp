@@ -115,8 +115,8 @@ private:
     cv::Rect current_bbox; ///<latest bbox received from policy_manager
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
-    std::size_t bboxes_counter{}; ///<counts how many bboxes have been received so far
     std::vector<double> iou_record, frame_time_record; ///<records that are saved to csv file
+    std::vector<cv::Rect> bboxes_record; ///<records that are saved to csv file
 };
 
 #endif

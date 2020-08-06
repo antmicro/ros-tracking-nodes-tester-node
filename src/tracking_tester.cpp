@@ -73,7 +73,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
         {
             ros::Rate loop_rate(check_for_bbox_rate); 
             // wait until we get another frame, but check for it rarely to save CPU time
-            while (ros::ok() && bboxes_counter < processed_frames + 1)
+            while (ros::ok() && bboxes_record.size() < processed_frames + 1)
             {
                 ros::spinOnce();
                 loop_rate.sleep();
@@ -140,11 +140,14 @@ void TrackingTester::saveRecords(std::string path)
         ros::shutdown();
     }
     ROS_INFO("Saving records to file");
-    out << "Frame number,IoU,frame time\n";
+    out << "Frame number,IoU,frame time,left,top,width,height\n";
     out << std::setprecision(5) << std::fixed;
     for (std::size_t i = 0; i < iou_record.size(); i++)
-        out << i + 1 << "," << iou_record[i] << "," << frame_time_record[i] << '\n';
-
+    {
+        auto bbox = bboxes_record[i];
+        out << i + 1 << ',' << iou_record[i] << ',' << frame_time_record[i] << ','
+           << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << '\n';
+    }
     ROS_INFO("Records saved");
 }
 
@@ -233,8 +236,7 @@ void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
     current_bbox.height = msg.bbox.height;
     if (!msg.valid)
         current_bbox = cv::Rect{};
-
-    bboxes_counter++;
+    bboxes_record.push_back(current_bbox);
 }
 
 void TrackingTester::publishFrame(cv::Mat frame)
