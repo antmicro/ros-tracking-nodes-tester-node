@@ -1,7 +1,8 @@
 #ifndef TRACKING_TESTER_
 #define TRACKING_TESTER_
 
-#include "tracking_tester/optional_bbox_msg.h"
+#include <tracking_tester/optional_bbox_msg.h>
+#include <stopwatch/saveRecordsService.h>
 
 #include <string>
 #include <vector>
@@ -115,6 +116,7 @@ private:
     cv::Rect current_bbox; ///<latest bbox received from policy_manager
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
+    ros::ServiceClient stopwatch_save_client; ///<client for saveRecords
     std::vector<double> iou_record, frame_time_record; ///<records that are saved to csv file
     std::vector<cv::Rect> bboxes_record; ///<records that are saved to csv file
 };

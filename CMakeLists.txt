@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(tracking_tester)
 
 add_definitions(-Wall -Wextra -Wmaybe-uninitialized -Wno-unused-result -Wno-unused-parameter -Werror)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp

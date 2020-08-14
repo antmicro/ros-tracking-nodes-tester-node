@@ -60,10 +60,10 @@ void TrackingTester::run(bool visualize, int playback_fps)
 
         auto frame = image;
         auto annotation = annotations[processed_frames];
+        frame_start_time = ros::Time::now().toSec();
         publishFrame(frame);
         if (!ros::ok()) break;
 
-        frame_start_time = ros::Time::now().toSec();
         if (playback_fps) // passively wait until we can process another frame
         {
             ros::Time::sleepUntil(ros::Time(frame_end_time + 1.0 / playback_fps));
@@ -83,6 +83,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
         double iou = calculateIou(annotation, current_bbox);
         double frame_time = (ros::Time::now().toSec() - frame_start_time);
         double total_frame_time = (ros::Time::now().toSec() - frame_end_time);
+        frame_end_time = ros::Time::now().toSec();
 
         if (visualize)
         {
@@ -101,7 +102,6 @@ void TrackingTester::run(bool visualize, int playback_fps)
                              (processed_frames + 1) / (frame_paths.size() / 10) * 10));
         }
 
-        frame_end_time = ros::Time::now().toSec();
         iou_record.push_back(iou);
         frame_time_record.push_back(frame_time);
             
@@ -132,6 +132,14 @@ void TrackingTester::run(bool visualize, int playback_fps)
 
 void TrackingTester::saveRecords(std::string path)
 {
+    stopwatch::saveRecordsService stopwatch_srv;
+    std::string stopwatch_path = path.substr(0, path.find_last_of("."))
+        + "_stopwatch.csv";
+    stopwatch_srv.request.out_path = stopwatch_path;
+    if (!stopwatch_save_client.call(stopwatch_srv))
+    {
+        ROS_ERROR("Stopwatch failed");
+    }
     std::string filename = path;
     std::ofstream out(filename);
     if (!out)
@@ -140,13 +148,17 @@ void TrackingTester::saveRecords(std::string path)
         ros::shutdown();
     }
     ROS_INFO("Saving records to file");
-    out << "Frame number,IoU,frame time,left,top,width,height\n";
+    out << "frame_number,iou,frame_time,left,top,width,height,realLeft,realTop,realWidth,"
+        "realHeight\n";
     out << std::setprecision(5) << std::fixed;
     for (std::size_t i = 0; i < iou_record.size(); i++)
     {
         auto bbox = bboxes_record[i];
+        auto bbox_real = annotations[i];
         out << i + 1 << ',' << iou_record[i] << ',' << frame_time_record[i] << ','
-           << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << '\n';
+           << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << ','
+           << bbox_real.x << ',' << bbox_real.y << ',' << bbox_real.width << ','
+               << bbox_real.height << '\n';
     }
     ROS_INFO("Records saved");
 }
@@ -226,6 +238,8 @@ void TrackingTester::subscribe_advertise()
     final_bbox_sub = tester_handle.subscribe("policy_manager/final_bbox", 1,
             &TrackingTester::receiveBbox, this);
     frame_pub = tester_handle.advertise<sensor_msgs::Image>("frame_producer/frame", 1);
+    stopwatch_save_client = tester_handle.serviceClient<stopwatch::saveRecordsService>(
+            "stopwatch/saveRecords");
 }
 
 void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
