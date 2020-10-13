@@ -117,8 +117,17 @@ private:
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
     ros::ServiceClient stopwatch_save_client; ///<client for saveRecords
-    std::vector<double> iou_record, frame_time_record; ///<records that are saved to csv file
-    std::vector<cv::Rect> bboxes_record; ///<records that are saved to csv file
+
+    /**
+     * Helper struct for storing results
+     */
+    struct Record
+    {
+        double iou, frame_time;
+        cv::Rect predicted_bbox;
+        ros::Time time;
+    };
+    std::vector<Record> records; ///<records that are saved to csv file
 };
 
 #endif

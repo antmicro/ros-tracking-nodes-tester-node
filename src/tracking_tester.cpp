@@ -73,7 +73,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
         {
             ros::Rate loop_rate(check_for_bbox_rate); 
             // wait until we get another frame, but check for it rarely to save CPU time
-            while (ros::ok() && bboxes_record.size() < processed_frames + 1)
+            while (ros::ok() && records.size() < processed_frames + 1)
             {
                 ros::spinOnce();
                 loop_rate.sleep();
@@ -102,8 +102,12 @@ void TrackingTester::run(bool visualize, int playback_fps)
                              (processed_frames + 1) / (frame_paths.size() / 10) * 10));
         }
 
-        iou_record.push_back(iou);
-        frame_time_record.push_back(frame_time);
+        Record record;
+        record.iou = iou;
+        record.frame_time = frame_time;
+        record.predicted_bbox = current_bbox;
+        record.time = ros::Time::now();
+        records.push_back(record);
             
         if (visualize)
         {   
@@ -118,9 +122,12 @@ void TrackingTester::run(bool visualize, int playback_fps)
         }
     }
     double iou_avg = 0.0;
-    for (auto x : iou_record)
-        iou_avg += x;
-    iou_avg /= iou_record.size();
+    for (auto rec : records)
+    {
+        auto iou = rec.iou;
+        iou_avg += iou;
+    }
+    iou_avg /= records.size();
     iou_avg *= 100.0;
     ROS_INFO("----- Avarage IoU: %5.2f%% -----", iou_avg);
     if (visualize)
@@ -148,14 +155,15 @@ void TrackingTester::saveRecords(std::string path)
         ros::shutdown();
     }
     ROS_INFO("Saving records to file");
-    out << "frame_number,iou,frame_time,left,top,width,height,realLeft,realTop,realWidth,"
+    out << "frame_number,time,iou,frame_time,left,top,width,height,realLeft,realTop,realWidth,"
         "realHeight\n";
     out << std::setprecision(5) << std::fixed;
-    for (std::size_t i = 0; i < iou_record.size(); i++)
+    for (std::size_t i = 0; i < records.size(); i++)
     {
-        auto bbox = bboxes_record[i];
+        auto rec = records[i];
+        auto bbox = rec.predicted_bbox;
         auto bbox_real = annotations[i];
-        out << i + 1 << ',' << iou_record[i] << ',' << frame_time_record[i] << ','
+        out << i + 1 << ',' << rec.time << ',' << rec.iou << ',' << rec.frame_time << ','
            << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << ','
            << bbox_real.x << ',' << bbox_real.y << ',' << bbox_real.width << ','
                << bbox_real.height << '\n';
@@ -250,7 +258,6 @@ void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
     current_bbox.height = msg.bbox.height;
     if (!msg.valid)
         current_bbox = cv::Rect{};
-    bboxes_record.push_back(current_bbox);
 }
 
 void TrackingTester::publishFrame(cv::Mat frame)
