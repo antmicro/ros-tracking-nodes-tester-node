@@ -123,6 +123,13 @@ private:
      */
     struct Record
     {
+        Record(double iou, double frame_time, cv::Rect predicted_bbox, ros::Time time)
+        {
+            this->iou = iou;
+            this->frame_time = frame_time;
+            this->predicted_bbox = predicted_bbox;
+            this->time = time;
+        }
         double iou, frame_time;
         cv::Rect predicted_bbox;
         ros::Time time;

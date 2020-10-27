@@ -47,7 +47,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
 
     double frame_start_time = ros::Time::now().toSec();
     double frame_end_time = ros::Time::now().toSec();
-    for (std::size_t processed_frames = 0; processed_frames < frame_paths.size();
+    for (size_t processed_frames = 0; processed_frames < frame_paths.size();
             processed_frames++)
     {
         std::string path = frame_paths[processed_frames];
@@ -102,13 +102,9 @@ void TrackingTester::run(bool visualize, int playback_fps)
                              (processed_frames + 1) / (frame_paths.size() / 10) * 10));
         }
 
-        Record record;
-        record.iou = iou;
-        record.frame_time = frame_time;
-        record.predicted_bbox = current_bbox;
-        record.time = ros::Time::now();
+        Record record(iou, frame_time, current_bbox, ros::Time::now());
         records.push_back(record);
-            
+        
         if (visualize)
         {   
             cv::rectangle(frame, annotation, cv::Scalar(0, 255, 0));
@@ -158,7 +154,7 @@ void TrackingTester::saveRecords(std::string path)
     out << "frame_number,time,iou,frame_time,left,top,width,height,realLeft,realTop,realWidth,"
         "realHeight\n";
     out << std::setprecision(5) << std::fixed;
-    for (std::size_t i = 0; i < records.size(); i++)
+    for (size_t i = 0; i < records.size(); i++)
     {
         auto rec = records[i];
         auto bbox = rec.predicted_bbox;
