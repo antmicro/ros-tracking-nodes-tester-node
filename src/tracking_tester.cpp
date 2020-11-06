@@ -1,6 +1,7 @@
 #include "tracking_tester.hpp"
 #include "FileSystemUtils.hpp"
 
+#include <cxxopts.hpp>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
@@ -272,20 +273,23 @@ double TrackingTester::calculateIou(cv::Rect r1, cv::Rect r2)
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "tester");
+   	cxxopts::Options options("tracking_tester", "Used to test tracking performance");
+	options.add_options()
+		("v,visualize", "Print frames on screen")
+		("f,fps", "fps of playback; default is wait mode",
+		 cxxopts::value<int>()->default_value(0))
+		("i,input", "path to directory containing frames and annotations",
+		 cxxopts::value<std::string>())
+		("o,output", "path where output should be saved",
+		 cxxopts::value<std::string>()->default_value(""));
+	auto args = options.parse(argc, argv);
+
+	ros::init(argc, argv, "tester");
     ROS_INFO("Initialized!");
     ros::NodeHandle tester_handle;
 
-    if (argc < 4 || argc > 5)
-    {
-        ROS_ERROR("Provide three or four arguments: firstly - 0 for no visualization, 1 for"
-                " visualization, next playback fps or zero, then path to directory containing"
-                " frames with"
-                " annotations and finally path where output should be saved (optional)");
-        ros::shutdown();
-    }
-    std::string in_path = argv[3], out_path = (argc == 5 ? argv[4] : "");
-    TrackingTester tester(argv[1][0] == '1', std::atoi(argv[2]), in_path, out_path);
+    std::string in_path = args["i"], out_path = args["o"];
+    TrackingTester tester(args["v"], args["f"], in_path, out_path);
     system("rosnode kill -a");
     system("killall roscore");
 }
