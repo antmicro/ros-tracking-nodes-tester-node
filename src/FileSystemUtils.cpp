@@ -1,3 +1,7 @@
+#include <FileSystemUtils.hpp>
+#include <dirent.h>
+#include <cstring>
+
 inline bool FileSystemUtils::endsWith(std::string const & value, std::string const & ending)
 {
     if (ending.size() > value.size()) return false;

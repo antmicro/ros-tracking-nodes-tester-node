@@ -2,7 +2,11 @@
 #define TRACKING_TESTER_
 
 #include <tracking_tester/optional_bbox_msg.h>
+#include <tracking_tester/frame_msg.h>
 #include <stopwatch/saveRecordsService.h>
+#include <stopwatch/ticService.h>
+#include <stopwatch/tocService.h>
+#include <stopwatch/newClockService.h>
 
 #include <string>
 #include <vector>
@@ -12,9 +16,9 @@
 #include <ros/ros.h>
 
 /**
- * Class testing quality of output produced by policy_manager
+ * Class testing quality of output produced by the policy
  * Produces own frames on topic frame_producer/frame
- * Reads bboxes from policy manager
+ * Reads bboxes from the policy
  * Outputs results to csv file
  * One instance should be used for one dataset
  */
@@ -41,7 +45,7 @@ public:
      *
      * 
      * @param visualize open visualizer window?
-     * @param playback_fps how fast should frames be sent to policy_manager
+     * @param playback_fps how fast should frames be sent to the policy
      * @param in_path path to directory with frames
      * @param out_path path to output, no output written if empty
      */
@@ -91,16 +95,16 @@ private:
      */
     void subscribe_advertise();
     /**
-     * Callback for receiving bboxes from policy_manager
+     * Callback for receiving bboxes from the policy
      * @param msg message from the topic
      */
-    void receiveBbox(const policy_manager::optional_bbox_msg& msg);
+    void receiveBbox(const tracking_tester::optional_bbox_msg& msg);
 
     /**
-     * Publishes frame to frame_producer/frame topic so that policy_manager can read it
+     * Publishes frame to frame_producer/frame topic so that policy can read it
      * @param frame the frame to be published
      */
-    void publishFrame(cv::Mat frame);
+    void publishFrame(cv::Mat frame, unsigned number);
 
     /**
      * Calculates intersection over union of two cv::Rects
@@ -113,24 +117,33 @@ private:
     std::vector<std::string> frame_paths; ///<paths to frame files
     std::string annotation_path; ///<path to annotation file (.ann)
     std::vector<cv::Rect> annotations; ///<annotation file decyphered into cv::Rects
-    cv::Rect current_bbox; ///<latest bbox received from policy_manager
+    cv::Rect current_bbox; ///<latest bbox received from policy
+	std::vector<tracking_tester::optional_bbox_msg> bboxes; ///<received bboxes
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
     ros::ServiceClient stopwatch_save_client; ///<client for saveRecords
+	/**
+	 * Stopwatch members used to measure performance of entire
+	 * policy
+	 */
+	unsigned long clock_id;
+	ros::ServiceClient toc_client;
+	ros::ServiceClient tic_client;
+	ros::ServiceClient new_client;
+
 
     /**
      * Helper struct for storing results
      */
     struct Record
     {
-        Record(double iou, double frame_time, cv::Rect predicted_bbox, ros::Time time)
+        Record(double iou, cv::Rect predicted_bbox, ros::Time time)
         {
             this->iou = iou;
-            this->frame_time = frame_time;
             this->predicted_bbox = predicted_bbox;
             this->time = time;
         }
-        double iou, frame_time;
+        double iou;
         cv::Rect predicted_bbox;
         ros::Time time;
     };

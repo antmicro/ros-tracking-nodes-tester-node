@@ -21,10 +21,14 @@ execute_process(
 
 add_definitions(-DCOMMIT="${GIT_COMMIT_HASH}")
 
+add_message_files(DIRECTORY msg FILES frame_msg.msg)
+add_message_files(DIRECTORY msg FILES optional_bbox_msg.msg)
+add_message_files(DIRECTORY msg FILES rect.msg)
+generate_messages(DEPENDENCIES std_msgs sensor_msgs)
+
 catkin_package(
     INCLUDE_DIRS src
     LIBRARIES ${PROJECT_NAME}_lib
- 	DEPENDS system_lib
 )
 
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
@@ -37,14 +41,26 @@ include_directories(
     ${OpenCV_LIBS}
 )
 
-# tracking_tester.cpp
 add_executable(tracking_tester
     src/tracking_tester.cpp
+    src/FileSystemUtils.cpp
 )
 
 add_dependencies(tracking_tester ${PROJECT_NAME}_gencpp)
 
 target_link_libraries(tracking_tester
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+)
+
+add_library(tracking_tester_lib
+    src/tracking_tester.cpp
+    src/FileSystemUtils.cpp
+)
+
+add_dependencies(tracking_tester_lib ${PROJECT_NAME}_gencpp)
+
+target_link_libraries(tracking_tester_lib
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
 )

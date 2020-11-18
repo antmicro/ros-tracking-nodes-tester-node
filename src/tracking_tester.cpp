@@ -42,12 +42,12 @@ void TrackingTester::run(bool visualize, int playback_fps)
     }
     if (visualize)
     {
-        cv::namedWindow("TrackingTester visualizer", cv::WINDOW_NORMAL);
-        cv::resizeWindow("TrackingTester visualizer", 800, 600);
+        cv::namedWindow("Tracking tester - visualizer", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Tracking tester - visualizer", 800, 600);
     }
-
     double frame_start_time = ros::Time::now().toSec();
     double frame_end_time = ros::Time::now().toSec();
+    tracking_tester::optional_bbox_msg last_msg{};
     for (size_t processed_frames = 0; processed_frames < frame_paths.size();
             processed_frames++)
     {
@@ -62,9 +62,8 @@ void TrackingTester::run(bool visualize, int playback_fps)
         auto frame = image;
         auto annotation = annotations[processed_frames];
         frame_start_time = ros::Time::now().toSec();
-        publishFrame(frame);
+        publishFrame(frame, processed_frames);
         if (!ros::ok()) break;
-
         if (playback_fps) // passively wait until we can process another frame
         {
             ros::Time::sleepUntil(ros::Time(frame_end_time + 1.0 / playback_fps));
@@ -73,8 +72,9 @@ void TrackingTester::run(bool visualize, int playback_fps)
         else
         {
             ros::Rate loop_rate(check_for_bbox_rate); 
-            // wait until we get another frame, but check for it rarely to save CPU time
-            while (ros::ok() && records.size() < processed_frames + 1)
+            auto bboxes_size = bboxes.size(); // wait until a frame arrives or timeout
+            const auto timeout = 2e-1;
+            while (ros::ok() && bboxes.size() == bboxes_size && ros::Time::now().toSec() <= frame_start_time + timeout)
             {
                 ros::spinOnce();
                 loop_rate.sleep();
@@ -82,42 +82,39 @@ void TrackingTester::run(bool visualize, int playback_fps)
         }
 
         double iou = calculateIou(annotation, current_bbox);
-        double frame_time = (ros::Time::now().toSec() - frame_start_time);
-        double total_frame_time = (ros::Time::now().toSec() - frame_end_time);
         frame_end_time = ros::Time::now().toSec();
 
         if (visualize)
         {
-            if (playback_fps)
-                ROS_INFO("IoU: IoU: %f%%, FPS: %f", iou * 100.0, 1.0 / total_frame_time);
-            else 
-                ROS_INFO("IoU: %f%%, Policy manager time: %f,"
-                        "Total frame time: %f, Total FPS: %f",
-                        iou * 100.0,
-                        frame_time, total_frame_time, 1.0 / total_frame_time);
+            ROS_INFO("IoU: %f%%", iou * 100.0);
         }
         else
         {
-             if ((processed_frames + 1) % (frame_paths.size() / 10) == 0)
-                 ROS_INFO("Testing...\t%d%%", static_cast<int>(
-                             (processed_frames + 1) / (frame_paths.size() / 10) * 10));
+            if ((processed_frames + 1) % (frame_paths.size() / 10) == 0)
+                ROS_INFO("Testing...\t%d%%", static_cast<int>(
+                            (processed_frames + 1) / (frame_paths.size() / 10) * 10));
         }
 
-        Record record(iou, frame_time, current_bbox, ros::Time::now());
+        Record record(iou, current_bbox, ros::Time(frame_start_time));
         records.push_back(record);
-        
+
         if (visualize)
         {   
             cv::rectangle(frame, annotation, cv::Scalar(0, 255, 0));
             cv::rectangle(frame, current_bbox, cv::Scalar(0, 0, 255));
-            cv::imshow("TrackingTester visualizer", frame);
+            cv::imshow("Tracking tester - visualizer", frame);
             if (cv::waitKey(1) == 'q')
             {
-                system("rosnode kill -a");
-                system("killall roscore");
+                /*
+                   system("rosnode kill -a");
+                   system("killall roscore");
+                   */
+                cv::destroyAllWindows();
+                ros::shutdown();
             }
         }
     }
+
     double iou_avg = 0.0;
     for (auto rec : records)
     {
@@ -152,7 +149,7 @@ void TrackingTester::saveRecords(std::string path)
         ros::shutdown();
     }
     ROS_INFO("Saving records to file");
-    out << "frame_number,time,iou,frame_time,left,top,width,height,realLeft,realTop,realWidth,"
+    out << "frame_number,time,iou,left,top,width,height,realLeft,realTop,realWidth,"
         "realHeight\n";
     out << std::setprecision(5) << std::fixed;
     for (size_t i = 0; i < records.size(); i++)
@@ -160,10 +157,10 @@ void TrackingTester::saveRecords(std::string path)
         auto rec = records[i];
         auto bbox = rec.predicted_bbox;
         auto bbox_real = annotations[i];
-        out << i + 1 << ',' << rec.time << ',' << rec.iou << ',' << rec.frame_time << ','
-           << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << ','
-           << bbox_real.x << ',' << bbox_real.y << ',' << bbox_real.width << ','
-               << bbox_real.height << '\n';
+        out << i + 1 << ',' << rec.time << ',' << rec.iou << ','
+            << bbox.x << ',' << bbox.y << ',' << bbox.width << ',' << bbox.height << ','
+            << bbox_real.x << ',' << bbox_real.y << ',' << bbox_real.width << ','
+            << bbox_real.height << '\n';
     }
     ROS_INFO("Records saved");
 }
@@ -179,8 +176,8 @@ bool TrackingTester::readDirectory(std::string path)
     }
     else if (ann_files.size() > 1)
     {
-        ROS_ERROR("Multiple annotation files aren't supported."
-               "Merge them into one file.");
+        ROS_ERROR("Multiple annotation files aren't supported. "
+                "Merge them into one file.");
         return false;
     }
     else annotation_path = ann_files.back();
@@ -188,7 +185,7 @@ bool TrackingTester::readDirectory(std::string path)
     std::vector<std::string> frames;
     FileSystemUtils::listFiles(path, frames);
     frames.erase(std::remove_if(frames.begin(), frames.end(), [](std::string s)
-            { return s.size() >= 3 && (s.substr(s.size() - 3) == "ann"); }), frames.end());
+                { return s.size() >= 3 && (s.substr(s.size() - 3) == "ann"); }), frames.end());
     frame_paths = frames;
     ROS_INFO("Found %lu frame files", frame_paths.size());
     return true;
@@ -240,26 +237,70 @@ void TrackingTester::loadAnnotations()
 void TrackingTester::subscribe_advertise()
 {
     ros::NodeHandle tester_handle;
-    final_bbox_sub = tester_handle.subscribe("policy_manager/final_bbox", 1,
+    final_bbox_sub = tester_handle.subscribe("tracking_tester/bbox", 1,
             &TrackingTester::receiveBbox, this);
-    frame_pub = tester_handle.advertise<sensor_msgs::Image>("frame_producer/frame", 1);
+    frame_pub = tester_handle.advertise<tracking_tester::frame_msg>
+        ("tracking_tester/frame", 1, false);
+
+    // stopwatch
     stopwatch_save_client = tester_handle.serviceClient<stopwatch::saveRecordsService>(
             "stopwatch/saveRecords");
+    toc_client = tester_handle.serviceClient<stopwatch::tocService>("stopwatch/toc");
+    tic_client = tester_handle.serviceClient<stopwatch::ticService>("stopwatch/tic");
+    new_client = tester_handle.serviceClient<stopwatch::newClockService>("stopwatch/newClock");
+    stopwatch::newClockService new_srv;
+    new_srv.request.description = "policy_total";
+    if (!new_client.call(new_srv))
+    {
+        ROS_ERROR("Unable to communicate with stopwatch. "
+                "No time measurements will be performed.");
+    }
+    clock_id = new_srv.response.id;
 }
 
-void TrackingTester::receiveBbox(const policy_manager::optional_bbox_msg& msg)
+void TrackingTester::receiveBbox(const tracking_tester::optional_bbox_msg& msg)
 {
+    static bool first_run = true;
+    if (!first_run)
+    {
+        stopwatch::tocService toc_srv;
+        toc_srv.request.id = clock_id;
+        if (!toc_client.call(toc_srv))
+        {
+            ROS_INFO("Error encountered while communicating with stopwatch");
+        }
+    }
     current_bbox.x = msg.bbox.x;
     current_bbox.y = msg.bbox.y;
     current_bbox.width = msg.bbox.width;
     current_bbox.height = msg.bbox.height;
     if (!msg.valid)
         current_bbox = cv::Rect{};
+    bboxes.push_back(msg);
+
+    stopwatch::ticService tic_srv;
+    tic_srv.request.id = clock_id;
+    if (!tic_client.call(tic_srv))
+    {
+        ROS_INFO("Error encountered while communicating with stopwatch");
+    }
+
+    first_run = false;
 }
 
-void TrackingTester::publishFrame(cv::Mat frame)
+void TrackingTester::publishFrame(cv::Mat frame, unsigned number)
 {
-    const auto msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    ros::Rate loop_rate(check_for_bbox_rate); 
+    if (frame_pub.getNumSubscribers() == 0)
+    {
+        ROS_INFO("Waiting for someone to listen to frame topic...");
+        while (frame_pub.getNumSubscribers() == 0) loop_rate.sleep();
+        ROS_INFO("A subscriber found");
+    }
+    auto img = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    tracking_tester::frame_msg msg;
+    msg.image = *img;
+    msg.number = number;
     frame_pub.publish(msg);
 }
 
@@ -273,23 +314,25 @@ double TrackingTester::calculateIou(cv::Rect r1, cv::Rect r2)
 
 int main(int argc, char** argv)
 {
-   	cxxopts::Options options("tracking_tester", "Used to test tracking performance");
-	options.add_options()
-		("v,visualize", "Print frames on screen")
-		("f,fps", "fps of playback; default is wait mode",
-		 cxxopts::value<int>()->default_value(0))
-		("i,input", "path to directory containing frames and annotations",
-		 cxxopts::value<std::string>())
-		("o,output", "path where output should be saved",
-		 cxxopts::value<std::string>()->default_value(""));
-	auto args = options.parse(argc, argv);
+    cxxopts::Options options("tracking_tester", "Used to test tracking performance");
+    options.add_options()
+        ("v,visualize", "Print frames on screen")
+        ("f,fps", "fps of playback; default is wait mode",
+         cxxopts::value<int>()->default_value("0"))
+        ("i,input", "path to directory containing frames and annotations",
+         cxxopts::value<std::string>())
+        ("o,output", "path where output should be saved",
+         cxxopts::value<std::string>()->default_value(""));
+    auto args = options.parse(argc, argv);
 
-	ros::init(argc, argv, "tester");
+    ros::init(argc, argv, "tester");
     ROS_INFO("Initialized!");
     ros::NodeHandle tester_handle;
 
-    std::string in_path = args["i"], out_path = args["o"];
-    TrackingTester tester(args["v"], args["f"], in_path, out_path);
-    system("rosnode kill -a");
-    system("killall roscore");
+    std::string in_path = args["i"].as<std::string>(), out_path = args["o"].as<std::string>();
+    TrackingTester tester(args["v"].as<bool>(), args["f"].as<int>(), in_path, out_path);
+    /*
+       system("rosnode kill -a");
+       system("killall roscore");
+       */
 }
