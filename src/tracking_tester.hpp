@@ -82,7 +82,7 @@ private:
 
     /**
      * Sorts frame_paths field acording to pathComparator static method
-    */
+     */
     void sortFramePaths();
 
     /**
@@ -118,18 +118,18 @@ private:
     std::string annotation_path; ///<path to annotation file (.ann)
     std::vector<cv::Rect> annotations; ///<annotation file decyphered into cv::Rects
     cv::Rect current_bbox; ///<latest bbox received from policy
-	std::vector<tracking_tester::optional_bbox_msg> bboxes; ///<received bboxes
+    std::vector<tracking_tester::optional_bbox_msg> bboxes; ///<received bboxes
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
     ros::ServiceClient stopwatch_save_client; ///<client for saveRecords
-	/**
-	 * Stopwatch members used to measure performance of entire
-	 * policy
-	 */
-	unsigned long clock_id;
-	ros::ServiceClient toc_client;
-	ros::ServiceClient tic_client;
-	ros::ServiceClient new_client;
+    /**
+     * Stopwatch members used to measure performance of entire
+     * policy
+     */
+    unsigned long clock_id;
+    ros::ServiceClient toc_client;
+    ros::ServiceClient tic_client;
+    ros::ServiceClient new_client;
 
 
     /**
