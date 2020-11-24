@@ -6,21 +6,39 @@ import csv
 import time
 from pathlib import Path
 import argparse
+import subprocess
 
-def run_test(pathin, pathout, config):
-    os.system(f"./ci-run-tester.sh {config} {pathin} {pathout}")
-    time.sleep(0.5)
+def run_test(pathin, pathout, fps, start, stop):
+    start = subprocess.Popen(start.split(' '))
+    stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'])
+    tester = subprocess.Popen(['devel/lib/tracking_tester/tracking_tester', '-i',
+            str(pathin), '-o', str(pathout), '-f', str(fps)])
+    tester.wait()
+    start = subprocess.Popen(stop.split(' '))
+    subprocess.call(['rosnode', 'kill', 'stopwatch'])
+    stopwatch.wait()
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('in_paths', nargs='+', type=Path)
     parser.add_argument('out_path', type=Path)
     parser.add_argument('--passes', type=int, default=1, dest='passes')
+    parser.add_argument('--config_path', type=Path, default='test.config', dest='config_path')
     args = parser.parse_args()
 
     iteration = 0
-    with open('test.config', 'r') as configfile:
-        configs = configfile.read().splitlines()
+    with open(args.config_path, 'r') as configfile:
+        config_lines = configfile.read().splitlines()
+        if len(config_lines) % 4:
+            raise "Invalid config file - number of lines not divisible by 4"
+        configs = []
+        for i in range(len(config_lines) // 4):
+            config = {}
+            config["name"] = config_lines[i * 4]
+            config["fps"] = int(config_lines[i * 4 + 1])
+            config["start"] = config_lines[i * 4 + 2]
+            config["stop"] = config_lines[i * 4 + 3]
+            configs.append(config)
         with open(args.out_path / 'test.index', 'w') as index:
             index.write(f"passes={args.passes}\n")
             index.write(f"tests={len(args.in_paths)}\n")
@@ -28,12 +46,11 @@ def main():
                 index.write(f"test{counter + 1}={path.name}\n")
             index.write(f"policies={len(configs)}\n")
             for counter, config in enumerate(configs):
-                fps, name = config.split(' ')
-                index.write(f"policyname{counter + 1}={name}\n")
-                index.write(f"policyfps{counter + 1}={fps}\n")
+                index.write(f"policyname{counter + 1}={config['name']}\n")
+                index.write(f"policyfps{counter + 1}={config['fps']}\n")
 
         for config in configs:
-            policy_name = config.split(' ')[1]
+            policy_name = config['name']
             path = Path(args.out_path / policy_name)
             try:
                 if not path.exists():
@@ -51,7 +68,9 @@ def main():
                     print(info, flush=True)
                     pathout = path / \
                         Path(f"{in_path.name}_{str(counter + 1)}").with_suffix('.csv')
-                    run_test(in_path, pathout, config)
+                    run_test(in_path, pathout, config['fps'], config['start'],
+                            config['stop'])
+                    time.sleep(1)
 
 if __name__ == "__main__":
     main() 
