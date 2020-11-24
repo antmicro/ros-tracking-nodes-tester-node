@@ -30,7 +30,7 @@ def main():
     with open(args.config_path, 'r') as configfile:
         config_lines = configfile.read().splitlines()
         if len(config_lines) % 4:
-            raise "Invalid config file - number of lines not divisible by 4"
+            raise RuntimeError("Invalid config file - number of lines not divisible by 4")
         configs = []
         for i in range(len(config_lines) // 4):
             config = {}
