@@ -7,10 +7,10 @@ It also uses `stopwatch` node to gather additional measurements.
 
 The node is created to run one test and dies afterwards.
 
-* `-v`, `--visualize`			Print frames on screen, optional
-* `-f`, `--fps`				    fps of playback, optional - default is wait mode
-* `-i`, `--input`				path to directory containing frames and annotations
-* `-o`, `--output`				path where output should be saved, .csv file extension, optional
+* `-v`, `--visualize` - Print frames on screen, optional
+* `-f`, `--fps` - fps of playback, optional - default is wait mode
+* `-i`, `--input` - path to directory containing frames and annotations
+* `-o`, `--output` - path where output should be saved, .csv file extension, optional
 
 ## test.py
 
@@ -43,7 +43,7 @@ rosservice call /detector2/node-reset   # reset the node after test
 
 ### Script usage
 
-* `--in_paths`                              paths to directories with datasets in ALOV format 
-* `--out_path`                              path to empty diretory - where should results be saved
-* `--passes`                                number of passes over all datasets for all policies
+* `--in_paths` - paths to directories with datasets in ALOV format 
+* `--out_path` - path to empty diretory - where should results be saved
+* `--passes` - number of passes over all datasets for all policies
 
