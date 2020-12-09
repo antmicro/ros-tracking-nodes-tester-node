@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     std_msgs
     message_generation
+    stopwatch
 )
 
 execute_process(
