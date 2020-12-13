@@ -104,7 +104,7 @@ private:
      * Publishes frame to frame_producer/frame topic so that policy can read it
      * @param frame the frame to be published
      */
-    void publishFrame(cv::Mat frame, unsigned number);
+    void publishFrame(cv::Mat frame);
 
     /**
      * Calculates intersection over union of two cv::Rects

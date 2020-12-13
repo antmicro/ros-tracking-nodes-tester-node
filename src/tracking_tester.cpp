@@ -288,7 +288,7 @@ void TrackingTester::receiveBbox(const tracking_tester::optional_bbox_msg& msg)
     first_run = false;
 }
 
-void TrackingTester::publishFrame(cv::Mat frame, unsigned number)
+void TrackingTester::publishFrame(cv::Mat frame)
 {
     ros::Rate loop_rate(check_for_bbox_rate); 
     if (frame_pub.getNumSubscribers() == 0)
@@ -300,7 +300,6 @@ void TrackingTester::publishFrame(cv::Mat frame, unsigned number)
     auto img = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
     tracking_tester::frame_msg msg;
     msg.image = *img;
-    msg.number = number;
     frame_pub.publish(msg);
 }
 

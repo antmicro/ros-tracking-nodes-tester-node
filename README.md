@@ -12,6 +12,8 @@ The node is created to run one test and dies afterwards.
 * `-i`, `--input` - path to directory containing frames and annotations
 * `-o`, `--output` - path where output should be saved, .csv file extension, optional
 
+Tested node should subscribe to topic `tracking_tester/frame` and publish to topic `tracking_tester/bbox`.
+
 ## test.py
 
 There is a Python3 script supplemented, which runs tester and generates output, which can be parsed by `vot-report-generator`.
@@ -46,4 +48,3 @@ rosservice call /detector2/node-reset   # reset the node after test
 * `--in_paths` - paths to directories with datasets in ALOV format 
 * `--out_path` - path to empty diretory - where should results be saved
 * `--passes` - number of passes over all datasets for all policies
-
