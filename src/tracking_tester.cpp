@@ -62,7 +62,7 @@ void TrackingTester::run(bool visualize, int playback_fps)
         auto frame = image;
         auto annotation = annotations[processed_frames];
         frame_start_time = ros::Time::now().toSec();
-        publishFrame(frame, processed_frames);
+        publishFrame(frame);
         if (!ros::ok()) break;
         if (playback_fps) // passively wait until we can process another frame
         {
