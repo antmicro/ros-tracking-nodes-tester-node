@@ -49,6 +49,8 @@ add_executable(tracking_tester
 
 add_dependencies(tracking_tester ${PROJECT_NAME}_gencpp)
 
+target_include_directories(tracking_tester PUBLIC third-party/include)
+
 target_link_libraries(tracking_tester
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
@@ -60,6 +62,8 @@ add_library(tracking_tester_lib
 )
 
 add_dependencies(tracking_tester_lib ${PROJECT_NAME}_gencpp)
+
+target_include_directories(tracking_tester_lib PUBLIC third-party/include)
 
 target_link_libraries(tracking_tester_lib
     ${catkin_LIBRARIES}
