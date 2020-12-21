@@ -9,12 +9,14 @@ import argparse
 import subprocess
 
 def run_test(pathin, pathout, fps, start, stop):
+    stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'], stdout=None, stderr=None)
     start = subprocess.Popen(start.split(' '))
-    stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'])
+    start.wait()
     tester = subprocess.Popen(['devel/lib/tracking_tester/tracking_tester', '-i',
             str(pathin), '-o', str(pathout), '-f', str(fps)])
     tester.wait()
-    start = subprocess.Popen(stop.split(' '))
+    stop = subprocess.Popen(stop.split(' '))
+    stop.wait()
     subprocess.call(['rosnode', 'kill', 'stopwatch'])
     stopwatch.wait()
 
