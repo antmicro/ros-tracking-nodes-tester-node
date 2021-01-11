@@ -9,16 +9,23 @@ import argparse
 import subprocess
 
 def run_test(pathin, pathout, fps, start, stop):
+    print("Starting test...", flush=True)
+    print("Running stopwatch...", flush=True)
     stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'], stdout=None, stderr=None)
+    print("Running policy...", flush=True)
     start = subprocess.Popen(start.split(' '))
     start.wait()
+    print("Running tester...", flush=True)
     tester = subprocess.Popen(['devel/lib/tracking_tester/tracking_tester', '-i',
             str(pathin), '-o', str(pathout), '-f', str(fps)])
     tester.wait()
+    print("Stopping policy...", flush=True)
     stop = subprocess.Popen(stop.split(' '))
     stop.wait()
+    print("Killing stopwatch...", flush=True)
     subprocess.call(['rosnode', 'kill', 'stopwatch'])
     stopwatch.wait()
+    print("Test done", flush=True)
 
 def main():
     parser = argparse.ArgumentParser()
