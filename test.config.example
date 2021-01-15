@@ -1,5 +1,5 @@
 # rename to test.config if you want to use this
 example_tracker
 240
-devel/lib/example_tracker/example_tracker
+./start.sh
 rosnode kill example_tracker
