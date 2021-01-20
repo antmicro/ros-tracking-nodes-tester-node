@@ -16,11 +16,14 @@
 #include <ros/ros.h>
 
 /**
- * Class testing quality of output produced by the policy
- * Produces own frames on topic frame_producer/frame
- * Reads bboxes from the policy
- * Outputs results to csv file
- * One instance should be used for one dataset
+ * Class testing quality of output produced by the policy.
+ * It:
+ * 
+ * * Produces own frames on topic frame_producer/frame,
+ * * Reads bboxes from the policy,
+ * * Outputs results to csv file.
+ * 
+ * One instance should be used for one dataset.
  */
 class TrackingTester
 {
@@ -29,9 +32,9 @@ public:
     /**
      * The first argument is either `0` or `1` indicating whether visualizer of tester should be
      * launched. This creates another window. Second argument is FPS of playback.
-     * It is an integerdetermining how many frames should be sent to system per second.
-     * Note that very high valuesmight be unsupported. If it is set to 0, tester will wait
-     * for bbox before it sends anotherframe. The third argument is path to directory
+     * It is an integer determining how many frames should be sent to system per second.
+     * Note that very high values may be unsupported. If it is set to 0, tester will wait
+     * for the bbox before it sends another frame. The third argument is path to the directory
      * containing one `.ann` file with annotations in ALOV
      * dataset format and the rest of the files are images containing frame
      * info with names in format
@@ -43,8 +46,7 @@ public:
      * The fourth (last) argument is path where output file will be written in csv format. If no
      * path is provided output isn't written anywhere.
      *
-     * 
-     * @param visualize open visualizer window?
+     * @param visualize true if the results should be shown in window
      * @param playback_fps how fast should frames be sent to the policy
      * @param in_path path to directory with frames
      * @param out_path path to output, no output written if empty
@@ -54,13 +56,13 @@ public:
     ~TrackingTester(); ///< shutdown ros after tests
 private:
     /**
-     * Contains main loop
-     * @param visualize open visualizer window?
+     * Runs the main loop
+     * @param visualize opens the window with visualization
      */
     void run(bool visualize, int playback_fps);
 
     /**
-     * Save gathered data
+     * Saves gathered data
      * @param path name of file to which data will be written
      */
     void saveRecords(std::string path);
@@ -122,6 +124,7 @@ private:
     ros::Subscriber final_bbox_sub; ///<subscriber that receives bboxes
     ros::Publisher frame_pub; ///<publisher that publishes frames
     ros::ServiceClient stopwatch_save_client; ///<client for saveRecords
+    
     /**
      * Stopwatch members used to measure performance of entire
      * policy
