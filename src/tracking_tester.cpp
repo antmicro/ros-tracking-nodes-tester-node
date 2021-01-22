@@ -105,10 +105,6 @@ void TrackingTester::run(bool visualize, int playback_fps)
             cv::imshow("Tracking tester - visualizer", frame);
             if (cv::waitKey(1) == 'q')
             {
-                /*
-                   system("rosnode kill -a");
-                   system("killall roscore");
-                   */
                 cv::destroyAllWindows();
                 ros::shutdown();
             }
@@ -327,8 +323,4 @@ int main(int argc, char** argv)
 
     std::string in_path = args["i"].as<std::string>(), out_path = args["o"].as<std::string>();
     TrackingTester tester(args["v"].as<bool>(), args["f"].as<int>(), in_path, out_path);
-    /*
-    system("rosnode kill -a");
-    system("killall roscore");
-    */
 }

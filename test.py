@@ -9,6 +9,7 @@ import argparse
 import subprocess
 
 def run_test(pathin, pathout, fps, start, stop):
+    """Runs a single test by creating tester and stopwatch nodes and running user's scripts"""
     print("Starting test...", flush=True)
     print("Running stopwatch...", flush=True)
     stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'], stdout=None, stderr=None)
@@ -29,10 +30,10 @@ def run_test(pathin, pathout, fps, start, stop):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('in_paths', nargs='+', type=Path)
-    parser.add_argument('out_path', type=Path)
-    parser.add_argument('--passes', type=int, default=1, dest='passes')
-    parser.add_argument('--config_path', type=Path, default='test.config', dest='config_path')
+    parser.add_argument('in_paths', nargs='+', type=Path, help='Positive number of paths to input directories')
+    parser.add_argument('out_path', type=Path, help='Path to directory, where output should be stored')
+    parser.add_argument('--passes', type=int, default=1, dest='passes', help='How many times test on each dataset')
+    parser.add_argument('--config_path', type=Path, default='test.config', dest='config_path', help='Path to configuration file')
     args = parser.parse_args()
 
     iteration = 0
