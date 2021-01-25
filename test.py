@@ -8,17 +8,23 @@ from pathlib import Path
 import argparse
 import subprocess
 
+
 def run_test(pathin, pathout, fps, start, stop):
-    """Runs a single test by creating tester and stopwatch nodes and running user's scripts"""
+    """Runs a single test by creating tester
+    and stopwatch nodes and running user's scripts"""
     print("Starting test...", flush=True)
     print("Running stopwatch...", flush=True)
-    stopwatch = subprocess.Popen(['devel/lib/stopwatch/stopwatch'], stdout=None, stderr=None)
+    stopwatch = subprocess.Popen(
+        ['devel/lib/stopwatch/stopwatch'], stdout=None,
+        stderr=None)
     print("Running policy...", flush=True)
     start = subprocess.Popen(start.split(' '))
     start.wait()
     print("Running tester...", flush=True)
-    tester = subprocess.Popen(['devel/lib/tracking_tester/tracking_tester', '-i',
-            str(pathin), '-o', str(pathout), '-f', str(fps)])
+    tester = subprocess.Popen(
+            ['devel/lib/tracking_tester/tracking_tester',
+                '-i', str(pathin), '-o', str(pathout),
+                '-f', str(fps)])
     tester.wait()
     print("Stopping policy...", flush=True)
     stop = subprocess.Popen(stop.split(' '))
@@ -28,19 +34,27 @@ def run_test(pathin, pathout, fps, start, stop):
     stopwatch.wait()
     print("Test done", flush=True)
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('in_paths', nargs='+', type=Path, help='Positive number of paths to input directories')
-    parser.add_argument('out_path', type=Path, help='Path to directory, where output should be stored')
-    parser.add_argument('--passes', type=int, default=1, dest='passes', help='How many times test on each dataset')
-    parser.add_argument('--config_path', type=Path, default='test.config', dest='config_path', help='Path to configuration file')
+    parser.add_argument('in_paths', nargs='+', type=Path,
+                        help='Positive number of paths to input directories')
+    parser.add_argument('out_path', type=Path,
+                        help='''Path to directory,
+                        where output should be stored''')
+    parser.add_argument('--passes', type=int, default=1,
+                        dest='passes', help='''How many
+                        times test on each dataset''')
+    parser.add_argument('--config_path', type=Path, default='test.config',
+                        dest='config_path', help='Path to configuration file')
     args = parser.parse_args()
 
     iteration = 0
     with open(args.config_path, 'r') as configfile:
         config_lines = configfile.read().splitlines()
         if len(config_lines) % 4:
-            raise RuntimeError("Invalid config file - number of lines not divisible by 4")
+            raise RuntimeError(
+                "Invalid config file - number of lines not divisible by 4")
         configs = []
         for i in range(len(config_lines) // 4):
             config = {}
@@ -71,16 +85,19 @@ def main():
             for counter in range(args.passes):
                 for in_path in args.in_paths:
                     iteration += 1
-                    info = (f'[{iteration}/{args.passes * len(configs) * len(args.in_paths)}]'
+                    info = (f'[{iteration}/{args.passes * len(configs)'
+                            f'* len(args.in_paths)}]'
                             f' Policy: {policy_name}, Pass: {counter + 1}, '
                             f'Test: {in_path.name}')
                     print(len(info) * '-')
                     print(info, flush=True)
                     pathout = path / \
-                        Path(f"{in_path.name}_{str(counter + 1)}").with_suffix('.csv')
+                        Path(f"{in_path.name}_{str(counter + 1)}") \
+                        .with_suffix('.csv')
                     run_test(in_path, pathout, config['fps'], config['start'],
-                            config['stop'])
+                             config['stop'])
                     time.sleep(1)
+
 
 if __name__ == "__main__":
     main()
