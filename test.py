@@ -85,8 +85,9 @@ def main():
             for counter in range(args.passes):
                 for in_path in args.in_paths:
                     iteration += 1
-                    info = (f'[{iteration}/{args.passes * len(configs)'
-                            f'* len(args.in_paths)}]'
+                    all_iterations_len = args.passes * len(configs) \
+                    * len(args.in_paths)
+                    info = (f'[{iteration}/{all_iterations_len}]'
                             f' Policy: {policy_name}, Pass: {counter + 1}, '
                             f'Test: {in_path.name}')
                     print(len(info) * '-')
