@@ -1,5 +1,7 @@
 # Tracking tester
 
+Copyright (c) 2020-2021 [Antmicro](https://www.antmicro.com)
+
 *For an example on how to use this repository check* [ros-tracking-policy-examples repository](https://github.com/antmicro/ros-tracking-nodes-policy-examples).
 
 ROS node, which given annotated frames, tests a detecting/tracking system measures its performance and returns results in a `.csv` file.
