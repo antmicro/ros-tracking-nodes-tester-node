@@ -1,5 +1,0 @@
-# rename to test.config if you want to use this
-example_tracker
-240
-./start.sh
-rosnode kill example_tracker
