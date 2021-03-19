@@ -45,8 +45,8 @@ def main():
     parser.add_argument('--passes', type=int, default=1,
                         dest='passes', help='''How many
                         times test on each dataset''')
-    parser.add_argument('--config_path', type=Path, default='test.config',
-                        dest='config_path', help='Path to configuration file')
+    parser.add_argument('--config-path', type=Path, default='test.config',
+                        help='Path to configuration file')
     args = parser.parse_args()
 
     iteration = 0
