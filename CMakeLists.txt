@@ -42,30 +42,30 @@ include_directories(
     ${OpenCV_LIBS}
 )
 
-add_executable(tracking_tester
-    src/tracking_tester.cpp
-    src/FileSystemUtils.cpp
+add_executable(${PROJECT_NAME}
+    src/main.cpp
 )
 
-add_dependencies(tracking_tester ${PROJECT_NAME}_gencpp)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lib ${PROJECT_NAME}_gencpp)
 
 target_include_directories(tracking_tester PUBLIC third-party/include)
 
-target_link_libraries(tracking_tester
+target_link_libraries(${PROJECT_NAME}
+    ${PROJECT_NAME}_lib
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
 )
 
-add_library(tracking_tester_lib
+add_library(${PROJECT_NAME}_lib
     src/tracking_tester.cpp
     src/FileSystemUtils.cpp
 )
 
-add_dependencies(tracking_tester_lib ${PROJECT_NAME}_gencpp)
+add_dependencies(${PROJECT_NAME}_lib ${PROJECT_NAME}_gencpp)
 
-target_include_directories(tracking_tester_lib PUBLIC third-party/include)
+target_include_directories(${PROJECT_NAME}_lib PUBLIC third-party/include)
 
-target_link_libraries(tracking_tester_lib
+target_link_libraries(${PROJECT_NAME}_lib
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
 )
