@@ -2,30 +2,30 @@
 
 Copyright (c) 2020-2021 [Antmicro](https://www.antmicro.com)
 
-*For an example on how to use this repository check* [ros-tracking-policy-examples repository](https://github.com/antmicro/ros-tracking-nodes-policy-examples).
+*For an example on how to use this repository, see* [ros-tracking-policy-examples repository](https://github.com/antmicro/ros-tracking-nodes-policy-examples).
 
-ROS node, which given annotated frames, tests a detecting/tracking system measures its performance and returns results in a `.csv` file.
-It also uses `stopwatch` node from [ros-tracking-nodes-stopwatch repository](https://github.com/antmicro/ros-tracking-nodes-stopwatch) to gather additional measurements.
+The ROS node, which gives annotated frames, tests a detecting/tracking system measures its performance and returns results in a `.csv` file.
+It also uses the `stopwatch` node from the [ros-tracking-nodes-stopwatch repository](https://github.com/antmicro/ros-tracking-nodes-stopwatch) to gather additional measurements.
 
 ### Node usage
 
 The node is created to run one test and dies afterwards.
 
 * `-v`, `--visualize` - Print frames on screen, optional
-* `-f`, `--fps` - fps of playback, optional - default is wait mode
+* `-f`, `--fps` - FPS of playback, optional - wait mode is default
 * `-i`, `--input` - path to directory containing frames and annotations
 * `-o`, `--output` - path where output should be saved, .csv file extension, optional
 
-Tested node should subscribe to topic `tracking_tester/frame` and publish to topic `tracking_tester/bbox`.
+The tested node should subscribe to topic `tracking_tester/frame` and publish to topic `tracking_tester/bbox`.
 
 ### Input format
 
-There should be an image file of common format (readable by OpenCV) for each frame and one annotation in the input directory.
+There should be an image file of a common format (readable by OpenCV) for each frame and one annotation in the input directory.
 
 Image names should be in format `number.extension` where `number` is an arbitrary integer (possibly with leading zeros).
-Frames are processed in increasing number order (sorted numerically, not lexicographically).
+Frames are processed in the increasing number order (sorted numerically, not lexicographically).
 
-The annotation file should be in [ALOV dataset](http://alov300pp.joomlafree.it/dataset-resources.html) format, that is:
+The annotation file should have the [ALOV dataset](http://alov300pp.joomlafree.it/dataset-resources.html) format, that is:
 
 * there is one line for each frame
 * each line is in form `ord X1 Y1 X2 Y2 X3 Y3 X4 Y4`
@@ -36,18 +36,18 @@ It is assumed that the target is visible in every frame.
 
 ### Output
 
-The result of one test is a `.csv` file (with a header) in following format:
+The result of one test is a `.csv` file (with a header) in the following format:
 
 `frame_number,time,iou,left,top,width,height,realLeft,realTop,r ealWidth,realHeight`
 
-Where:
+where:
 
 * `time` is `ros::Time` as a real number.
-* `left`, `top`, `width`, `height` specify bounding box received from tested policy.
-* `realLeft`, `realTop`, `realWidth`, `realHeight` describe ground-truth bounding box from the dataset.
+* `left`, `top`, `width`, `height` specify the parameters of the bounding box received from the tested policy.
+* `realLeft`, `realTop`, `realWidth`, `realHeight` describe the ground-truth bounding box from the dataset.
 * `iou` is Intersection over Union of these two bounding boxes.
 
-Other files might be written to the directory containing provided output file.
+Other files might be written to the directory containing the provided output file.
 
 ## Automated tester script
 
@@ -59,7 +59,7 @@ The script can test multiple policies at once. For each policy to be tested, the
 
 ```
 policy_name
-an integer - fps of playback or zero for wait mode
+an integer - FPS of playback or zero for wait mode
 a command which will be exectued before a test
 a command which will be executed after a test
 ```
@@ -80,16 +80,16 @@ rosservice call /detector2/node-reset   # reset the node after test
 
 ### Script usage
 
-The script call is following:
+The script call looks as follows:
 
 ```
 python3 test.py dataset/sequence1 dataset/sequence2 ... out_path --passes 5 --config-path sample.config
 ```
 
 * `dataset/sequence1 dataset/sequence2 ...` - paths to directories with sequences in ALOV format
-* `out_path` - path to empty diretory - where the results should be saved
+* `out_path` - path to empty directory - where results should be saved
 * `--passes` - number of passes over all datasets for all policies
-* `--config-path` - path to the test configuration file
+* `--config-path` - path to test configuration file
 
 ### Output
 
@@ -99,7 +99,7 @@ The metadata file contains lines in following format `<property>=<value>`, like 
 
 ## Video sequences generation
 
-This tester requires video sequences with annotations in [ALOV dataset](http://alov300pp.joomlafree.it/dataset-resources.html) format.
+This tester requires video sequences with annotations in the [ALOV dataset](http://alov300pp.joomlafree.it/dataset-resources.html) format.
 Those can be generated using the [video2dataset tool](https://github.com/antmicro/video2dataset).
 
 ## Licensing
