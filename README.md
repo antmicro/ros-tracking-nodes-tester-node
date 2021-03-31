@@ -4,7 +4,7 @@ Copyright (c) 2020-2021 [Antmicro](https://www.antmicro.com)
 
 *For an example on how to use this repository, see* [ros-tracking-policy-examples repository](https://github.com/antmicro/ros-tracking-nodes-policy-examples).
 
-The ROS node, which gives annotated frames, tests a detecting/tracking system measures its performance and returns results in a `.csv` file.
+The ROS node, which gives annotated frames, tests a detecting/tracking system, measures its performance and returns results in a `.csv` file.
 It also uses the `stopwatch` node from the [ros-tracking-nodes-stopwatch repository](https://github.com/antmicro/ros-tracking-nodes-stopwatch) to gather additional measurements.
 
 ### Node usage
